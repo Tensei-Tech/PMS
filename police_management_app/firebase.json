@@ -1,0 +1,29 @@
+﻿{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "khakhi-diary",
+          "appId": "1:1037792018757:android:b946c3b1f2c12e49d3fe2c",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "khakhi-diary",
+          "configurations": {
+            "android": "1:1037792018757:android:b946c3b1f2c12e49d3fe2c",
+            "ios": "1:1037792018757:ios:81dbf2b47b0d2de3d3fe2c",
+            "web": "1:1037792018757:web:9fb4fe93dc03ceb6d3fe2c"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  }
+}

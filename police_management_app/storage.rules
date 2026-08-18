@@ -1,0 +1,16 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Registration identity photos — users/{uid}/id_card.jpg | selfie.jpg
+    match /users/{userId}/{fileName} {
+      allow read: if request.auth != null
+                  && request.auth.uid == userId
+                  && (fileName == 'id_card.jpg' || fileName == 'selfie.jpg');
+      allow write: if request.auth != null
+                   && request.auth.uid == userId
+                   && (fileName == 'id_card.jpg' || fileName == 'selfie.jpg')
+                   && request.resource.size < 10 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+  }
+}

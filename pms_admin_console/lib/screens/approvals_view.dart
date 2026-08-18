@@ -1,0 +1,489 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import '../services/audit_service.dart';
+
+class ApprovalsView extends StatefulWidget {
+  const ApprovalsView({super.key});
+
+  @override
+  State<ApprovalsView> createState() => _ApprovalsViewState();
+}
+
+class _ApprovalsViewState extends State<ApprovalsView> {
+  final Set<String> _selectedUsers = {};
+  bool _isProcessingBulk = false;
+
+  Future<void> _approveUser(BuildContext context, String docId, String name) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(docId)
+          .update({
+        'accountStatus': 'active',
+        'status': 'active',
+      });
+
+      await AuditService.logAction(
+        action: 'APPROVED',
+        targetUserId: docId,
+        details: 'Approved registration for $name',
+      );
+
+      if (context.mounted) {
+        setState(() {
+          _selectedUsers.remove(docId);
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Approved registration for $name'),
+            backgroundColor: Colors.green.shade700,
+            behavior: SnackBarBehavior.floating,
+            width: 400,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to approve: $e'),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _rejectUser(BuildContext context, String docId, String name) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Reject Registration'),
+        content: Text('Are you sure you want to reject the registration for "$name"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Reject'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(docId)
+            .update({
+          'accountStatus': 'rejected',
+          'status': 'rejected',
+        });
+
+        await AuditService.logAction(
+          action: 'REJECTED',
+          targetUserId: docId,
+          details: 'Rejected registration for $name',
+        );
+
+        if (context.mounted) {
+          setState(() {
+            _selectedUsers.remove(docId);
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Rejected registration for $name'),
+              backgroundColor: Colors.red.shade700,
+              behavior: SnackBarBehavior.floating,
+              width: 400,
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to reject: $e'),
+              backgroundColor: Colors.red.shade700,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _bulkApproveUsers() async {
+    if (_selectedUsers.isEmpty) return;
+
+    setState(() {
+      _isProcessingBulk = true;
+    });
+
+    final count = _selectedUsers.length;
+    final userIdsToApprove = List<String>.from(_selectedUsers);
+
+    try {
+      final batch = FirebaseFirestore.instance.batch();
+      for (final docId in userIdsToApprove) {
+        final docRef = FirebaseFirestore.instance.collection('users').doc(docId);
+        batch.update(docRef, {
+          'accountStatus': 'active',
+          'status': 'active',
+        });
+      }
+
+      await batch.commit();
+
+      for (final docId in userIdsToApprove) {
+        await AuditService.logAction(
+          action: 'APPROVED',
+          targetUserId: docId,
+          details: 'Bulk approved registration',
+        );
+      }
+
+      if (mounted) {
+        setState(() {
+          _selectedUsers.clear();
+          _isProcessingBulk = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Successfully approved $count officer(s)!'),
+            backgroundColor: Colors.green.shade700,
+            behavior: SnackBarBehavior.floating,
+            width: 400,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isProcessingBulk = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Bulk approval failed: $e'),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  String _formatDate(dynamic dateValue) {
+    if (dateValue is Timestamp) {
+      final dt = dateValue.toDate();
+      return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+    } else if (dateValue is String && dateValue.isNotEmpty) {
+      final dt = DateTime.tryParse(dateValue);
+      if (dt != null) {
+        return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+      }
+      return dateValue;
+    }
+    return 'N/A';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Stack(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        'Pending Officer Approvals',
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Chip(
+                        avatar: const Icon(Icons.pending_actions, size: 18, color: Colors.redAccent),
+                        label: const Text('Requires Attention'),
+                        backgroundColor: Colors.red.shade50,
+                        side: BorderSide(color: Colors.red.shade200),
+                      ),
+                    ],
+                  ),
+                  if (_selectedUsers.isNotEmpty)
+                    FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.green.shade700,
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: _isProcessingBulk ? null : _bulkApproveUsers,
+                      icon: _isProcessingBulk
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.done_all),
+                      label: Text('Approve Selected (${_selectedUsers.length})'),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Review and manage pending officer registration requests in real-time',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.outline,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Expanded(
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('users')
+                      .where('accountStatus', whereIn: ['pending_approval', 'pending'])
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    }
+
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Text(
+                          'Error loading pending approvals: ${snapshot.error}',
+                          style: TextStyle(color: theme.colorScheme.error),
+                        ),
+                      );
+                    }
+
+                    final docs = snapshot.data?.docs ?? [];
+
+                    if (docs.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.verified_outlined,
+                              size: 64,
+                              color: theme.colorScheme.primary.withAlpha(150),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No pending approvals 🎉',
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'All officer registration requests have been processed.',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.outline,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    final allDocIds = docs.map((d) => d.id).toSet();
+
+                    return Card(
+                      elevation: 1,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: theme.colorScheme.outlineVariant),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: SingleChildScrollView(
+                          child: DataTable(
+                            headingRowColor: WidgetStateProperty.all(
+                              theme.colorScheme.surfaceContainerHigh,
+                            ),
+                            showCheckboxColumn: true,
+                            onSelectAll: (selected) {
+                              setState(() {
+                                if (selected == true) {
+                                  _selectedUsers.addAll(allDocIds);
+                                } else {
+                                  _selectedUsers.removeAll(allDocIds);
+                                }
+                              });
+                            },
+                            columns: const [
+                              DataColumn(
+                                label: Text(
+                                  'Name',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'Badge / Govt ID',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'Designation / Rank',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'Station',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'Applied Date',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'Actions',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                            rows: docs.map((doc) {
+                              final data = doc.data() as Map<String, dynamic>;
+                              final docId = doc.id;
+                              final isSelected = _selectedUsers.contains(docId);
+
+                              final name = (data['name'] ?? data['fullName'] ?? data['displayName'] ?? 'Unknown').toString();
+                              final badgeRaw = (data['badgeNumber'] ?? data['badge_number'] ?? data['badgeNo'])?.toString() ?? '';
+                              final govtIdRaw = (data['govtId'] ?? '').toString();
+                              final badgeOrGovtId = badgeRaw.isNotEmpty
+                                  ? badgeRaw
+                                  : (govtIdRaw.isNotEmpty ? govtIdRaw : 'N/A');
+
+                              final designation = (data['designation'] ?? data['rank'] ?? 'N/A').toString();
+                              final station = (data['stationName'] ?? data['station'] ?? data['assignedStation'] ?? 'Unassigned').toString();
+                              final appliedDate = _formatDate(data['createdAt'] ?? data['appliedDate'] ?? data['timestamp']);
+
+                              return DataRow(
+                                selected: isSelected,
+                                onSelectChanged: (selected) {
+                                  setState(() {
+                                    if (selected == true) {
+                                      _selectedUsers.add(docId);
+                                    } else {
+                                      _selectedUsers.remove(docId);
+                                    }
+                                  });
+                                },
+                                cells: [
+                                  DataCell(
+                                    Row(
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 16,
+                                          backgroundColor: theme.colorScheme.primaryContainer,
+                                          child: Text(
+                                            name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                            style: TextStyle(
+                                              color: theme.colorScheme.onPrimaryContainer,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Text(
+                                          name,
+                                          style: const TextStyle(fontWeight: FontWeight.w500),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  DataCell(Text(badgeOrGovtId)),
+                                  DataCell(
+                                    Chip(
+                                      label: Text(designation),
+                                      padding: EdgeInsets.zero,
+                                      visualDensity: VisualDensity.compact,
+                                    ),
+                                  ),
+                                  DataCell(Text(station)),
+                                  DataCell(Text(appliedDate)),
+                                  DataCell(
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.check_circle_outline, color: Colors.green),
+                                          tooltip: 'Approve',
+                                          onPressed: () => _approveUser(context, docId, name),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.cancel_outlined, color: Colors.red),
+                                          tooltip: 'Reject',
+                                          onPressed: () => _rejectUser(context, docId, name),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (_isProcessingBulk)
+          Container(
+            color: Colors.black26,
+            child: const Center(
+              child: Card(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(width: 16),
+                      Text('Approving selected officers...'),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}

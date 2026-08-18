@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1037792018757",
+    "project_id": "khakhi-diary",
+    "storage_bucket": "khakhi-diary.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1037792018757:android:c15b90194c28c03dd3fe2c",
+        "android_client_info": {
+          "package_name": "com.policemgmt.police_management_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAT_R1GKY8RpvJvvnJtCQHwbTLAvv8Kn74"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1037792018757:android:b946c3b1f2c12e49d3fe2c",
+        "android_client_info": {
+          "package_name": "com.tenseitech.khakhidiary"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAT_R1GKY8RpvJvvnJtCQHwbTLAvv8Kn74"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,174 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // =========================================================================
+    // 🔑 SHARED HELPER FUNCTIONS
+    // Used by both the Admin Console and the Mobile App
+    // =========================================================================
+
+    // Admin check: custom claims OR Firestore role field
+    function isAdmin() {
+      return request.auth != null && (
+        (request.auth.token.keys().hasAll(['role']) && request.auth.token.role in ['admin', 'super_admin']) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super_admin', 'Super Admin'])
+      );
+    }
+
+    // Basic auth check
+    function isAuthenticated() { return request.auth != null; }
+
+    // =========================================================================
+    // 📱 MOBILE APP HELPER FUNCTIONS
+    // =========================================================================
+    function userDocExists() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+    function isRegisteredUser() {
+      return isAuthenticated();
+    }
+    function myProfile() {
+      return userDocExists() ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data : {};
+    }
+    function myStation() { return myProfile().get('stationName', ''); }
+    function myAccountIsActive() { return myProfile().get('accountStatus', 'active') == 'active'; }
+    function hasMultiLocationAccess() {
+      return myProfile().get('designation', '') in ['PSI', 'API', 'PI', 'Sr. PI', 'CP', 'JT. CP', 'Addl. CP', 'DCP', 'ACP', 'SP', 'Addl. SP', 'Dy. SP', 'ASP'];
+    }
+    function canAccessStation(stationName) {
+      return myAccountIsActive() && (
+        stationName == null || 
+        !(stationName is string) || 
+        stationName.size() == 0 || 
+        stationName == myStation() || 
+        hasMultiLocationAccess()
+      );
+    }
+    function stationWideDefaultDesignations() {
+      return ['PSI', 'API', 'PI', 'Sr. PI', 'CP', 'JT. CP', 'Addl. CP', 'DCP', 'ACP', 'SP', 'Addl. SP', 'Dy. SP', 'ASP'];
+    }
+    function hasStationWideCaseAccess() {
+      return hasMultiLocationAccess() || myProfile().get('stationCaseViewGranted', false) == true || myProfile().get('designation', '') in stationWideDefaultDesignations();
+    }
+    function ownsCase(data) {
+      return data.get('createdBy', '') == request.auth.uid || data.get('assignedOfficerUid', '') == request.auth.uid;
+    }
+    function isLegacyVisibleCase(data) {
+      return !('createdBy' in data) || data.get('createdBy', '') == '';
+    }
+    function canReadCaseDocument(data) {
+      return isRegisteredUser() && myAccountIsActive() && canAccessStation(data.get('stationName', '')) && (hasStationWideCaseAccess() || ownsCase(data) || isLegacyVisibleCase(data));
+    }
+    function canMutateCaseDocument(data) {
+      return isRegisteredUser() && myAccountIsActive() && canAccessStation(data.get('stationName', '')) && (hasStationWideCaseAccess() || ownsCase(data) || isLegacyVisibleCase(data));
+    }
+    function canApproveOfficer(targetData) {
+      let myData = myProfile();
+      let isModifyingOnlyStatus = request.resource.data.diff(targetData).affectedKeys().hasOnly(['accountStatus']);
+      let isSP = myData.get('designation', '') in ['CP', 'JT. CP', 'Addl. CP', 'DCP', 'SP', 'Addl. SP'];
+      let isPI = myData.get('designation', '') in ['PI', 'Sr. PI'];
+      return isModifyingOnlyStatus && (
+        (isSP && myData.get('zone', '') == targetData.get('zone', '')) ||
+        (isPI && myData.get('stationName', '') == targetData.get('stationName', ''))
+      );
+    }
+
+    // =========================================================================
+    // 🛡️ 1. USERS
+    // Admin panel : list pending approvals (whereIn accountStatus), approve/reject
+    // Mobile app  : register, view own profile, supervisor approvals
+    // =========================================================================
+    match /users/{userId} {
+      allow get, list: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isAdmin() || (isAuthenticated() && request.auth.uid == userId) || canApproveOfficer(resource.data);
+      allow delete: if isAdmin();
+    }
+    
+    // =========================================================================
+    // 🛡️ 2. CASES (Main, Pending, Disposal)
+    // Admin panel : full access via isAdmin()
+    // Mobile app  : station-scoped access with designation checks
+    // =========================================================================
+    match /cases/{docId} {
+      allow read: if isAdmin() || resource == null || canReadCaseDocument(resource.data);
+      allow create: if isAdmin() || canMutateCaseDocument(request.resource.data);
+      allow update: if isAdmin() || (resource != null && canMutateCaseDocument(resource.data) && canMutateCaseDocument(request.resource.data));
+      allow delete: if isAdmin() || resource == null || (resource != null && canMutateCaseDocument(resource.data));
+    }
+    match /pending_cases/{docId} {
+      allow read: if isAdmin() || resource == null || canReadCaseDocument(resource.data);
+      allow create: if isAdmin() || canMutateCaseDocument(request.resource.data);
+      allow update: if isAdmin() || (resource != null && canMutateCaseDocument(resource.data) && canMutateCaseDocument(request.resource.data));
+      allow delete: if isAdmin() || resource == null || (resource != null && canMutateCaseDocument(resource.data));
+    }
+    match /disposal_cases/{docId} {
+      allow read: if isAdmin() || resource == null || canReadCaseDocument(resource.data);
+      allow create: if isAdmin() || canMutateCaseDocument(request.resource.data);
+      allow update: if isAdmin() || (resource != null && canMutateCaseDocument(resource.data) && canMutateCaseDocument(request.resource.data));
+      allow delete: if isAdmin() || resource == null || (resource != null && canMutateCaseDocument(resource.data));
+    }
+    
+    // =========================================================================
+    // 🛡️ 3. FIRS & WANTED
+    // =========================================================================
+    match /firs/{docId} {
+      allow read: if isAdmin() || isRegisteredUser();
+      allow create, update: if isAdmin() || (isRegisteredUser() && myAccountIsActive());
+      allow delete: if isAdmin();
+    }
+    match /wanted/{docId} {
+      allow read: if isAdmin() || isRegisteredUser();
+      allow create, update: if isAdmin() || (isRegisteredUser() && myAccountIsActive());
+      allow delete: if isAdmin();
+    }
+    
+    // =========================================================================
+    // 🛡️ 4. TRANSFER REQUESTS
+    // =========================================================================
+    match /transfer_requests/{requestId} {
+      allow read, create, update: if isAdmin() || isRegisteredUser();
+      allow delete: if isAdmin();
+    }
+    
+    // =========================================================================
+    // 🛡️ 5. AUDIT LOGS
+    // Admin panel : full read access
+    // Mobile app  : create only (immutable logs, never editable)
+    // =========================================================================
+    match /audit_logs/{logId} {
+      allow read: if isAdmin() || isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if false;
+    }
+
+    // =========================================================================
+    // 🛡️ 6. STATIONS
+    // =========================================================================
+    match /stations/{stationId} {
+      allow read: if isAdmin() || isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // =========================================================================
+    // 🛡️ 7. FEEDBACK
+    // Master Admin Dashboard : view/manage all feedback
+    // Mobile/Web app         : submit feedback documents
+    // =========================================================================
+    match /feedback/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /users/{userId}/feedback/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // =========================================================================
+    // 🛡️ 8. APP ANNOUNCEMENTS / NEWS
+    // =========================================================================
+    match /app_announcements/{docId} {
+      allow read: if true;
+      allow write: if isAdmin() || isAuthenticated();
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "dart.projectSearchPaths": ["police_management_app"],
+  "dart.analysisExcludedFolders": [
+    "police_management_app/build",
+    "police_management_app/windows/flutter/ephemeral",
+    "police_management_app/linux/flutter/ephemeral",
+    "police_management_app/macos/Flutter/ephemeral"
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "firestore": {
+    "rules": "police_management_app/firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}

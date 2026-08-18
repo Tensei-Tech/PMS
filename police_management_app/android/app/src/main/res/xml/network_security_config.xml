@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Domain 6: Network Security Configuration
+  - Blocks ALL cleartext (HTTP) traffic app-wide
+  - Trusts only system certificate authorities
+  - Rejects user-installed CA certificates (prevents MITM via proxy tools like Charles/Burp)
+
+  NOTE: Certificate pinning (pin-set) has been intentionally omitted.
+  Pin values must be computed from the actual live Firebase/Google TLS certificate chain:
+    openssl s_client -connect firestore.googleapis.com:443 | openssl x509 -pubkey -noout |
+    openssl pkey -pubin -outform DER | openssl dgst -sha256 -binary | base64
+  Add a <pin-set> block with a backup pin before enabling in production.
+-->
+<network-security-config>
+
+    <!-- Base config: No HTTP. Only system CAs. No user-installed CAs -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <!-- Only trust system CA store —
+                 user-installed certificates (e.g. Burp/Charles proxy) are rejected -->
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Firebase / Google APIs — explicit HTTPS enforcement -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">firestore.googleapis.com</domain>
+        <domain includeSubdomains="true">firebase.googleapis.com</domain>
+        <domain includeSubdomains="true">identitytoolkit.googleapis.com</domain>
+        <domain includeSubdomains="true">securetoken.googleapis.com</domain>
+        <domain includeSubdomains="true">googleapis.com</domain>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+
+</network-security-config>

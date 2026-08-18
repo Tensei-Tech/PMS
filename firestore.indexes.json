@@ -1,0 +1,46 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "cases",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "moduleKey", "order": "ASCENDING" },
+        { "fieldPath": "stationName", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "cases",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "moduleKey", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" },
+        { "fieldPath": "__name__", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "transfer_requests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "requestedByUid", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "transfer_requests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "toStationName", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "transfer_requests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "toDistrict", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

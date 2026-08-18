@@ -1,0 +1,843 @@
+﻿District / Commissionerate Name,Police Station Name,Type
+Mumbai City Commissionerate,Colaba,Commissionerate
+Mumbai City Commissionerate,Cuffe Parade,Commissionerate
+Mumbai City Commissionerate,Marine Lines,Commissionerate
+Mumbai City Commissionerate,Azad Maidan,Commissionerate
+Mumbai City Commissionerate,Pydhonie,Commissionerate
+Mumbai City Commissionerate,Nagpada,Commissionerate
+Mumbai City Commissionerate,Agripada,Commissionerate
+Mumbai City Commissionerate,VP Road,Commissionerate
+Mumbai City Commissionerate,Gamdevi,Commissionerate
+Mumbai City Commissionerate,Malabar Hill,Commissionerate
+Mumbai City Commissionerate,Tardeo,Commissionerate
+Mumbai City Commissionerate,DB Marg,Commissionerate
+Mumbai City Commissionerate,Worli,Commissionerate
+Mumbai City Commissionerate,N M Joshi Marg,Commissionerate
+Mumbai City Commissionerate,Kalachowki,Commissionerate
+Mumbai City Commissionerate,Byculla,Commissionerate
+Mumbai City Commissionerate,Mazgaon,Commissionerate
+Mumbai City Commissionerate,Dongri,Commissionerate
+Mumbai City Commissionerate,Mandvi,Commissionerate
+Mumbai City Commissionerate,Bhendi Bazar,Commissionerate
+Mumbai City Commissionerate,Crawford Market,Commissionerate
+Mumbai City Commissionerate,Matunga,Commissionerate
+Mumbai City Commissionerate,Dadar,Commissionerate
+Mumbai City Commissionerate,Dharavi,Commissionerate
+Mumbai City Commissionerate,Sion,Commissionerate
+Mumbai City Commissionerate,Antop Hill,Commissionerate
+Mumbai City Commissionerate,Wadala,Commissionerate
+Mumbai City Commissionerate,Chembur,Commissionerate
+Mumbai City Commissionerate,Govandi,Commissionerate
+Mumbai City Commissionerate,Mankhurd,Commissionerate
+Mumbai City Commissionerate,Trombay,Commissionerate
+Mumbai City Commissionerate,Kurla,Commissionerate
+Mumbai City Commissionerate,Chunabhatti,Commissionerate
+Mumbai City Commissionerate,Tilak Nagar,Commissionerate
+Mumbai City Commissionerate,Bandra,Commissionerate
+Mumbai City Commissionerate,Khar,Commissionerate
+Mumbai City Commissionerate,Santa Cruz,Commissionerate
+Mumbai City Commissionerate,Vakola,Commissionerate
+Mumbai City Commissionerate,Kalina,Commissionerate
+Mumbai City Commissionerate,Andheri,Commissionerate
+Mumbai City Commissionerate,MIDC Andheri,Commissionerate
+Mumbai City Commissionerate,Sahar,Commissionerate
+Mumbai City Commissionerate,DN Nagar,Commissionerate
+Mumbai City Commissionerate,Vile Parle,Commissionerate
+Mumbai City Commissionerate,Juhu,Commissionerate
+Mumbai City Commissionerate,Versova,Commissionerate
+Mumbai City Commissionerate,Goregaon,Commissionerate
+Mumbai City Commissionerate,Dindoshi,Commissionerate
+Mumbai City Commissionerate,Malad,Commissionerate
+Mumbai City Commissionerate,Kandivali,Commissionerate
+Mumbai City Commissionerate,Samata Nagar,Commissionerate
+Mumbai City Commissionerate,Dahisar,Commissionerate
+Mumbai City Commissionerate,Borivali,Commissionerate
+Mumbai City Commissionerate,Kasturba Marg,Commissionerate
+Mumbai City Commissionerate,Ghatkopar,Commissionerate
+Mumbai City Commissionerate,Vikhroli,Commissionerate
+Mumbai City Commissionerate,Bhandup,Commissionerate
+Mumbai City Commissionerate,Mulund,Commissionerate
+Mumbai City Commissionerate,Nahur,Commissionerate
+Mumbai City Commissionerate,Powai,Commissionerate
+Mumbai City Commissionerate,Jogeshwari,Commissionerate
+Mumbai City Commissionerate,Oshiwara,Commissionerate
+Mumbai City Commissionerate,Amboli,Commissionerate
+Mumbai City Commissionerate,Bangur Nagar,Commissionerate
+Mumbai City Commissionerate,Kurar Village,Commissionerate
+Mumbai City Commissionerate,Vanrai,Commissionerate
+Mumbai City Commissionerate,Pant Nagar,Commissionerate
+Mumbai City Commissionerate,Nehru Nagar,Commissionerate
+Mumbai City Commissionerate,Bhoiwada,Commissionerate
+Mumbai City Commissionerate,Shivaji Park,Commissionerate
+Mumbai City Commissionerate,Dharavi (Sion),Commissionerate
+Mumbai City Commissionerate,Ghatkopar (East),Commissionerate
+Mumbai City Commissionerate,Vikhroli (East),Commissionerate
+Mumbai City Commissionerate,Mulund (West),Commissionerate
+Mumbai City Commissionerate,Poisar,Commissionerate
+Mumbai City Commissionerate,Aksa,Commissionerate
+Mumbai City Commissionerate,Malwani,Commissionerate
+Mumbai City Commissionerate,Kandivali (East),Commissionerate
+Mumbai City Commissionerate,Charkop,Commissionerate
+Mumbai City Commissionerate,Dahisar (East),Commissionerate
+Mumbai City Commissionerate,Borivali (East),Commissionerate
+Mumbai City Commissionerate,Kasturba Marg (W),Commissionerate
+Mumbai City Commissionerate,Vakola (East),Commissionerate
+Mumbai City Commissionerate,Mankhurd (East),Commissionerate
+Mumbai City Commissionerate,Tembhi Naka,Commissionerate
+Mumbai City Commissionerate,Sewri,Commissionerate
+Mumbai City Commissionerate,Mahim,Commissionerate
+Mumbai City Commissionerate,Bandra (West),Commissionerate
+Mumbai City Commissionerate,Santacruz (East),Commissionerate
+Mumbai City Commissionerate,Santacruz (West),Commissionerate
+Mumbai City Commissionerate,Khar (East),Commissionerate
+Mumbai City Commissionerate,Andheri (East),Commissionerate
+Mumbai City Commissionerate,Andheri (West),Commissionerate
+Mumbai Railway Commissionerate,CST (Railway),Commissionerate
+Mumbai Railway Commissionerate,Churchgate (Railway),Commissionerate
+Mumbai Railway Commissionerate,Mumbai Central (Railway),Commissionerate
+Mumbai Railway Commissionerate,Dadar (Railway),Commissionerate
+Mumbai Railway Commissionerate,Byculla (Railway),Commissionerate
+Mumbai Railway Commissionerate,Matunga (Railway),Commissionerate
+Mumbai Railway Commissionerate,Sion (Railway),Commissionerate
+Mumbai Railway Commissionerate,Kurla (Railway),Commissionerate
+Mumbai Railway Commissionerate,Ghatkopar (Railway),Commissionerate
+Mumbai Railway Commissionerate,Vikhroli (Railway),Commissionerate
+Mumbai Railway Commissionerate,Bhandup (Railway),Commissionerate
+Mumbai Railway Commissionerate,Mulund (Railway),Commissionerate
+Mumbai Railway Commissionerate,Thane (Railway),Commissionerate
+Mumbai Railway Commissionerate,Kalyan (Railway),Commissionerate
+Mumbai Railway Commissionerate,Dombivli (Railway),Commissionerate
+Mumbai Railway Commissionerate,Badlapur (Railway),Commissionerate
+Mumbai Railway Commissionerate,Kasara (Railway),Commissionerate
+Mumbai Railway Commissionerate,Bandra (Railway),Commissionerate
+Mumbai Railway Commissionerate,Santacruz (Railway),Commissionerate
+Mumbai Railway Commissionerate,Andheri (Railway),Commissionerate
+Mumbai Railway Commissionerate,Borivali (Railway),Commissionerate
+Mumbai Railway Commissionerate,Vasai (Railway),Commissionerate
+Mumbai Railway Commissionerate,Virar (Railway),Commissionerate
+Mumbai Railway Commissionerate,Panvel (Railway),Commissionerate
+Mumbai Railway Commissionerate,Bhiwandi Road (Railway),Commissionerate
+Mumbai Railway Commissionerate,Khopoli (Railway),Commissionerate
+Thane City Commissionerate,Thane Nagar,Commissionerate
+Thane City Commissionerate,Naupada,Commissionerate
+Thane City Commissionerate,Vartak Nagar,Commissionerate
+Thane City Commissionerate,Wagle Estate,Commissionerate
+Thane City Commissionerate,Rabodi,Commissionerate
+Thane City Commissionerate,Kasarwadavali,Commissionerate
+Thane City Commissionerate,Kapurbawdi,Commissionerate
+Thane City Commissionerate,Dhokali,Commissionerate
+Thane City Commissionerate,Mumbra,Commissionerate
+Thane City Commissionerate,Kalwa,Commissionerate
+Thane City Commissionerate,Diva,Commissionerate
+Thane City Commissionerate,Bhiwandi City,Commissionerate
+Thane City Commissionerate,Narpoli,Commissionerate
+Thane City Commissionerate,Kongaon,Commissionerate
+Thane City Commissionerate,Shanti Nagar (Bhiwandi),Commissionerate
+Thane City Commissionerate,Anjur,Commissionerate
+Thane City Commissionerate,Nizampura,Commissionerate
+Thane City Commissionerate,Mumbra (East),Commissionerate
+Thane City Commissionerate,Vithalwadi,Commissionerate
+Thane City Commissionerate,Khidkali,Commissionerate
+Thane City Commissionerate,Wanjarpada,Commissionerate
+Navi Mumbai Commissionerate,Vashi,Commissionerate
+Navi Mumbai Commissionerate,Turbhe,Commissionerate
+Navi Mumbai Commissionerate,Kopar Khairane,Commissionerate
+Navi Mumbai Commissionerate,Rabale,Commissionerate
+Navi Mumbai Commissionerate,Ghansoli,Commissionerate
+Navi Mumbai Commissionerate,Airoli,Commissionerate
+Navi Mumbai Commissionerate,Digha,Commissionerate
+Navi Mumbai Commissionerate,Nerul,Commissionerate
+Navi Mumbai Commissionerate,Sanpada,Commissionerate
+Navi Mumbai Commissionerate,CBD Belapur,Commissionerate
+Navi Mumbai Commissionerate,Kharghar,Commissionerate
+Navi Mumbai Commissionerate,Panvel,Commissionerate
+Navi Mumbai Commissionerate,Kamothe,Commissionerate
+Navi Mumbai Commissionerate,Taloja,Commissionerate
+Navi Mumbai Commissionerate,Uran,Commissionerate
+Navi Mumbai Commissionerate,Khandeshwar,Commissionerate
+Navi Mumbai Commissionerate,Kalamboli,Commissionerate
+Navi Mumbai Commissionerate,Bonkode,Commissionerate
+Mira-Bhayandar-Vasai-Virar Commissionerate,Mira Road,Commissionerate
+Mira-Bhayandar-Vasai-Virar Commissionerate,Bhayandar (East),Commissionerate
+Mira-Bhayandar-Vasai-Virar Commissionerate,Bhayandar (West),Commissionerate
+Mira-Bhayandar-Vasai-Virar Commissionerate,Kashimira,Commissionerate
+Mira-Bhayandar-Vasai-Virar Commissionerate,Navghar,Commissionerate
+Mira-Bhayandar-Vasai-Virar Commissionerate,Vasai (East),Commissionerate
+Mira-Bhayandar-Vasai-Virar Commissionerate,Vasai (Town),Commissionerate
+Mira-Bhayandar-Vasai-Virar Commissionerate,Nala Sopara,Commissionerate
+Mira-Bhayandar-Vasai-Virar Commissionerate,Virar (East),Commissionerate
+Mira-Bhayandar-Vasai-Virar Commissionerate,Virar (West),Commissionerate
+Mira-Bhayandar-Vasai-Virar Commissionerate,Arnala,Commissionerate
+Mira-Bhayandar-Vasai-Virar Commissionerate,Tulinj,Commissionerate
+Mira-Bhayandar-Vasai-Virar Commissionerate,Manor,Commissionerate
+Mira-Bhayandar-Vasai-Virar Commissionerate,Waliv,Commissionerate
+Mira-Bhayandar-Vasai-Virar Commissionerate,Sandor,Commissionerate
+Mira-Bhayandar-Vasai-Virar Commissionerate,Bhinar,Commissionerate
+Pune City Commissionerate,Shivajinagar,Commissionerate
+Pune City Commissionerate,Deccan,Commissionerate
+Pune City Commissionerate,Kothrud,Commissionerate
+Pune City Commissionerate,Warje Malwadi,Commissionerate
+Pune City Commissionerate,Sinhagad Road,Commissionerate
+Pune City Commissionerate,Bharati Vidyapeeth,Commissionerate
+Pune City Commissionerate,Sahakarnagar,Commissionerate
+Pune City Commissionerate,Swargate,Commissionerate
+Pune City Commissionerate,Bibwewadi,Commissionerate
+Pune City Commissionerate,Market Yard,Commissionerate
+Pune City Commissionerate,Kondhwa,Commissionerate
+Pune City Commissionerate,Wanowrie,Commissionerate
+Pune City Commissionerate,Hadapsar,Commissionerate
+Pune City Commissionerate,Mundhwa,Commissionerate
+Pune City Commissionerate,Loni Kalbhor,Commissionerate
+Pune City Commissionerate,Vishrantwadi,Commissionerate
+Pune City Commissionerate,Yerawada,Commissionerate
+Pune City Commissionerate,Chandan Nagar,Commissionerate
+Pune City Commissionerate,Viman Nagar,Commissionerate
+Pune City Commissionerate,Kharadi,Commissionerate
+Pune City Commissionerate,Lohegaon,Commissionerate
+Pune City Commissionerate,Nagar Road,Commissionerate
+Pune City Commissionerate,Wadgaon Sheri,Commissionerate
+Pune City Commissionerate,Ramwadi,Commissionerate
+Pune City Commissionerate,Faraskhana,Commissionerate
+Pune City Commissionerate,Shantinagar,Commissionerate
+Pune City Commissionerate,Bundgarden,Commissionerate
+Pune City Commissionerate,Vanaz,Commissionerate
+Pune City Commissionerate,Parvati,Commissionerate
+Pune City Commissionerate,Dattawadi,Commissionerate
+Pune City Commissionerate,Chatushringi,Commissionerate
+Pune City Commissionerate,Aundh,Commissionerate
+Pune City Commissionerate,Baner,Commissionerate
+Pune City Commissionerate,Pashan,Commissionerate
+Pune City Commissionerate,Sangvi,Commissionerate
+Pune City Commissionerate,Wakad,Commissionerate
+Pune City Commissionerate,Hinjewadi,Commissionerate
+Pune City Commissionerate,Khadki,Commissionerate
+Pune City Commissionerate,Lashkar,Commissionerate
+Pune City Commissionerate,Samarth,Commissionerate
+Pune City Commissionerate,Khadak,Commissionerate
+Pune City Commissionerate,Vishrambaugwada,Commissionerate
+Pune City Commissionerate,Koregaon Park,Commissionerate
+Pune City Commissionerate,Wanavadi,Commissionerate
+Pune City Commissionerate,Dhankawadi,Commissionerate
+Pune City Commissionerate,Katraj,Commissionerate
+Pune City Commissionerate,Ambegaon (Budruk),Commissionerate
+Pune City Commissionerate,Undri,Commissionerate
+Pune City Commissionerate,Yerwada,Commissionerate
+Pune City Commissionerate,Pune Cantonment,Commissionerate
+Pimpri-Chinchwad Commissionerate,Chinchwad,Commissionerate
+Pimpri-Chinchwad Commissionerate,Pimpri,Commissionerate
+Pimpri-Chinchwad Commissionerate,Bhosari,Commissionerate
+Pimpri-Chinchwad Commissionerate,Dighi,Commissionerate
+Pimpri-Chinchwad Commissionerate,Akurdi,Commissionerate
+Pimpri-Chinchwad Commissionerate,Nigdi,Commissionerate
+Pimpri-Chinchwad Commissionerate,Sangvi (PCMC),Commissionerate
+Pimpri-Chinchwad Commissionerate,Dehu Road,Commissionerate
+Pimpri-Chinchwad Commissionerate,Talegaon Dabhade,Commissionerate
+Pimpri-Chinchwad Commissionerate,Chakan,Commissionerate
+Pimpri-Chinchwad Commissionerate,Pradhikaran,Commissionerate
+Pimpri-Chinchwad Commissionerate,Moshi,Commissionerate
+Pimpri-Chinchwad Commissionerate,Chikhali,Commissionerate
+Pimpri-Chinchwad Commissionerate,Wakad (PCMC),Commissionerate
+Pimpri-Chinchwad Commissionerate,Hinjewadi (PCMC),Commissionerate
+Pimpri-Chinchwad Commissionerate,Kharabwadi,Commissionerate
+Pimpri-Chinchwad Commissionerate,Talawade,Commissionerate
+Nagpur City Commissionerate,Sitabuldi,Commissionerate
+Nagpur City Commissionerate,Sadar,Commissionerate
+Nagpur City Commissionerate,Tehsil,Commissionerate
+Nagpur City Commissionerate,Sakkardara,Commissionerate
+Nagpur City Commissionerate,Nandanvan,Commissionerate
+Nagpur City Commissionerate,Ajni,Commissionerate
+Nagpur City Commissionerate,Sonegaon,Commissionerate
+Nagpur City Commissionerate,Wadi,Commissionerate
+Nagpur City Commissionerate,Kalamna,Commissionerate
+Nagpur City Commissionerate,Hudkeshwar,Commissionerate
+Nagpur City Commissionerate,Pratap Nagar,Commissionerate
+Nagpur City Commissionerate,Imambada,Commissionerate
+Nagpur City Commissionerate,Lakadganj,Commissionerate
+Nagpur City Commissionerate,Pachpaoli,Commissionerate
+Nagpur City Commissionerate,Yashodhara Nagar,Commissionerate
+Nagpur City Commissionerate,MIDC Nagpur,Commissionerate
+Nagpur City Commissionerate,Gittikhadan,Commissionerate
+Nagpur City Commissionerate,Hingna,Commissionerate
+Nagpur City Commissionerate,Koradi,Commissionerate
+Nagpur City Commissionerate,Narsala,Commissionerate
+Nagpur City Commissionerate,Manewada,Commissionerate
+Nagpur City Commissionerate,Beltarodi,Commissionerate
+Nagpur City Commissionerate,Pardi,Commissionerate
+Nagpur City Commissionerate,Jaripatka,Commissionerate
+Nagpur City Commissionerate,Dhantoli,Commissionerate
+Nagpur City Commissionerate,Ambazari,Commissionerate
+Nagpur City Commissionerate,Ganeshpeth,Commissionerate
+Nagpur City Commissionerate,Kotwali,Commissionerate
+Nagpur City Commissionerate,Panchpaoli (West),Commissionerate
+Nagpur City Commissionerate,Sakkardara (North),Commissionerate
+Nashik City Commissionerate,Sarkarwada,Commissionerate
+Nashik City Commissionerate,Panchavati,Commissionerate
+Nashik City Commissionerate,Nashik Road,Commissionerate
+Nashik City Commissionerate,Ambad,Commissionerate
+Nashik City Commissionerate,Satpur,Commissionerate
+Nashik City Commissionerate,MIDC Satpur,Commissionerate
+Nashik City Commissionerate,Cidco (Nashik),Commissionerate
+Nashik City Commissionerate,Indira Nagar,Commissionerate
+Nashik City Commissionerate,Gangapur Road,Commissionerate
+Nashik City Commissionerate,Pathardi Phata,Commissionerate
+Nashik City Commissionerate,Bhadrakali,Commissionerate
+Nashik City Commissionerate,Adgaon,Commissionerate
+Nashik City Commissionerate,Deolali Camp,Commissionerate
+Nashik City Commissionerate,Ozar (MIDC),Commissionerate
+Nashik City Commissionerate,Trimbak Road,Commissionerate
+Nashik City Commissionerate,College Road,Commissionerate
+Nashik City Commissionerate,Makhmalabad,Commissionerate
+Nashik City Commissionerate,Shalimar,Commissionerate
+Nashik City Commissionerate,Dwarka,Commissionerate
+Nashik City Commissionerate,Upnagar,Commissionerate
+Chhatrapati Sambhajinagar City Commissionerate,City Chowk,Commissionerate
+Chhatrapati Sambhajinagar City Commissionerate,Mukundwadi,Commissionerate
+Chhatrapati Sambhajinagar City Commissionerate,Cidco (Aurangabad),Commissionerate
+Chhatrapati Sambhajinagar City Commissionerate,Harsul,Commissionerate
+Chhatrapati Sambhajinagar City Commissionerate,Begumpura,Commissionerate
+Chhatrapati Sambhajinagar City Commissionerate,Osmanpura,Commissionerate
+Chhatrapati Sambhajinagar City Commissionerate,Waluj,Commissionerate
+Chhatrapati Sambhajinagar City Commissionerate,Cantonment (Aurangabad),Commissionerate
+Chhatrapati Sambhajinagar City Commissionerate,Garkheda,Commissionerate
+Chhatrapati Sambhajinagar City Commissionerate,Pundaliknagar,Commissionerate
+Chhatrapati Sambhajinagar City Commissionerate,Jawaharnagar,Commissionerate
+Chhatrapati Sambhajinagar City Commissionerate,Kranti Chowk,Commissionerate
+Chhatrapati Sambhajinagar City Commissionerate,Satara (Aurangabad),Commissionerate
+Chhatrapati Sambhajinagar City Commissionerate,Vedant Nagar,Commissionerate
+Solapur City Commissionerate,Solapur City,Commissionerate
+Solapur City Commissionerate,Subedari,Commissionerate
+Solapur City Commissionerate,Sadar Bazar,Commissionerate
+Solapur City Commissionerate,Barshi Road,Commissionerate
+Solapur City Commissionerate,Hotgi Road,Commissionerate
+Solapur City Commissionerate,Murarji Peth,Commissionerate
+Solapur City Commissionerate,Bhavani Peth,Commissionerate
+Solapur City Commissionerate,Ashok Chowk,Commissionerate
+Solapur City Commissionerate,MIDC Solapur,Commissionerate
+Solapur City Commissionerate,Akkalkot Road,Commissionerate
+Solapur City Commissionerate,Vijapur Road,Commissionerate
+Solapur City Commissionerate,Pune Road (Solapur),Commissionerate
+Amravati City Commissionerate,City Kotwali,Commissionerate
+Amravati City Commissionerate,Rajapeth,Commissionerate
+Amravati City Commissionerate,Cantonment (Amravati),Commissionerate
+Amravati City Commissionerate,Paratwada,Commissionerate
+Amravati City Commissionerate,MIDC Amravati,Commissionerate
+Amravati City Commissionerate,Varud,Commissionerate
+Amravati City Commissionerate,Badnera,Commissionerate
+Amravati City Commissionerate,Fafad Khed,Commissionerate
+Amravati City Commissionerate,Shivajinagar (Amravati),Commissionerate
+Amravati City Commissionerate,Nandgaon Peth,Commissionerate
+Palghar District,Palghar,Rural
+Palghar District,Boisar,Rural
+Palghar District,Dahanu,Rural
+Palghar District,Talasari,Rural
+Palghar District,Jawhar,Rural
+Palghar District,Vikramgad,Rural
+Palghar District,Wada,Rural
+Palghar District,Manor,Rural
+Palghar District,Safale,Rural
+Palghar District,Umroli,Rural
+Palghar District,Kelwa,Rural
+Palghar District,Vangaon,Rural
+Palghar District,Mokhada,Rural
+Palghar District,Vasai (Rural),Rural
+Palghar District,Saphale,Rural
+Palghar District,Khodala,Rural
+Thane District (Rural),Kalyan,Rural
+Thane District (Rural),Dombivli,Rural
+Thane District (Rural),Ulhasnagar,Rural
+Thane District (Rural),Ambernath,Rural
+Thane District (Rural),Badlapur,Rural
+Thane District (Rural),Titwala,Rural
+Thane District (Rural),Murbad,Rural
+Thane District (Rural),Shahad,Rural
+Thane District (Rural),Vithalwadi,Rural
+Thane District (Rural),Khadalwadi,Rural
+Thane District (Rural),Shahapur,Rural
+Thane District (Rural),Wangani,Rural
+Thane District (Rural),Nere,Rural
+Thane District (Rural),Bhiwandi (Rural),Rural
+Thane District (Rural),Kalher,Rural
+Thane District (Rural),Vasind,Rural
+Thane District (Rural),Atgaon,Rural
+Thane District (Rural),Khardi,Rural
+Raigad District,Alibag,Rural
+Raigad District,Pen,Rural
+Raigad District,Panvel (Rural),Rural
+Raigad District,Karjat,Rural
+Raigad District,Khopoli,Rural
+Raigad District,Roha,Rural
+Raigad District,Mahad,Rural
+Raigad District,Poladpur,Rural
+Raigad District,Shrivardhan,Rural
+Raigad District,Murud,Rural
+Raigad District,Mangaon,Rural
+Raigad District,Tala,Rural
+Raigad District,Sudhagad,Rural
+Raigad District,Mhasla,Rural
+Raigad District,Kolad,Rural
+Raigad District,Nagothane,Rural
+Raigad District,Uran,Rural
+Raigad District,Khalapur,Rural
+Raigad District,Poynad,Rural
+Raigad District,Goregaon (Raigad),Rural
+Ratnagiri District,Ratnagiri,Rural
+Ratnagiri District,Chiplun,Rural
+Ratnagiri District,Khed,Rural
+Ratnagiri District,Dapoli,Rural
+Ratnagiri District,Mandangad,Rural
+Ratnagiri District,Guhagar,Rural
+Ratnagiri District,Sangameshwar,Rural
+Ratnagiri District,Lanja,Rural
+Ratnagiri District,Rajapur,Rural
+Ratnagiri District,Deorukh,Rural
+Ratnagiri District,Hatkhamba,Rural
+Ratnagiri District,Adivare,Rural
+Ratnagiri District,Nate,Rural
+Ratnagiri District,Pali (Ratnagiri),Rural
+Ratnagiri District,Chafe,Rural
+Ratnagiri District,Sangave,Rural
+Sindhudurg District,Sawantwadi,Rural
+Sindhudurg District,Kudal,Rural
+Sindhudurg District,Malvan,Rural
+Sindhudurg District,Kankavali,Rural
+Sindhudurg District,Devgad,Rural
+Sindhudurg District,Vengurla,Rural
+Sindhudurg District,Vaibhavwadi,Rural
+Sindhudurg District,Dodamarg,Rural
+Sindhudurg District,Banda,Rural
+Sindhudurg District,Aachara,Rural
+Sindhudurg District,Oros,Rural
+Sindhudurg District,Phondaghat,Rural
+Nashik District (Rural),Igatpuri,Rural
+Nashik District (Rural),Ghoti,Rural
+Nashik District (Rural),Wadivarhe,Rural
+Nashik District (Rural),Ozar,Rural
+Nashik District (Rural),Pimpalgaon Baswant,Rural
+Nashik District (Rural),Niphad,Rural
+Nashik District (Rural),Lasalgaon,Rural
+Nashik District (Rural),Chandwad,Rural
+Nashik District (Rural),Yeola,Rural
+Nashik District (Rural),Manmad,Rural
+Nashik District (Rural),Nandgaon,Rural
+Nashik District (Rural),Malegaon (Rural),Rural
+Nashik District (Rural),Malegaon (City),Rural
+Nashik District (Rural),Baglan,Rural
+Nashik District (Rural),Kalwan,Rural
+Nashik District (Rural),Surgana,Rural
+Nashik District (Rural),Peint,Rural
+Nashik District (Rural),Dindori,Rural
+Nashik District (Rural),Vani,Rural
+Nashik District (Rural),Sinnar (Rural),Rural
+Nashik District (Rural),Nandur Madhyameshwar,Rural
+Nashik District (Rural),Saikheda,Rural
+Nashik District (Rural),Satana,Rural
+Nashik District (Rural),Deola,Rural
+Nashik District (Rural),Kopargaon (Rural),Rural
+Dhule District,Dhule,Rural
+Dhule District,Shirpur,Rural
+Dhule District,Shindkheda,Rural
+Dhule District,Sakri,Rural
+Dhule District,Sindkheda,Rural
+Dhule District,Dondaicha,Rural
+Dhule District,Navapur,Rural
+Dhule District,Samode,Rural
+Dhule District,Pimpalner,Rural
+Dhule District,Taloda,Rural
+Nandurbar District,Nandurbar,Rural
+Nandurbar District,Shahada,Rural
+Nandurbar District,Taloda,Rural
+Nandurbar District,Navapur,Rural
+Nandurbar District,Akkalkuwa,Rural
+Nandurbar District,Dhadgaon,Rural
+Nandurbar District,Molgi,Rural
+Nandurbar District,Prakasha,Rural
+Nandurbar District,Pimpalkhuta,Rural
+Jalgaon District,Jalgaon,Rural
+Jalgaon District,Bhusawal,Rural
+Jalgaon District,Amalner,Rural
+Jalgaon District,Chalisgaon,Rural
+Jalgaon District,Pachora,Rural
+Jalgaon District,Parola,Rural
+Jalgaon District,Erandol,Rural
+Jalgaon District,Dharangaon,Rural
+Jalgaon District,Yawal,Rural
+Jalgaon District,Raver,Rural
+Jalgaon District,Muktainagar,Rural
+Jalgaon District,Bodwad,Rural
+Jalgaon District,Chopda,Rural
+Jalgaon District,Jamner,Rural
+Jalgaon District,Savda,Rural
+Jalgaon District,Waghad,Rural
+Jalgaon District,Paldhi,Rural
+Jalgaon District,Bhadgaon,Rural
+Jalgaon District,Varangaon,Rural
+Jalgaon District,Dahivel,Rural
+Ahmednagar District,Ahmednagar,Rural
+Ahmednagar District,Sangamner,Rural
+Ahmednagar District,Shrirampur,Rural
+Ahmednagar District,Kopargaon,Rural
+Ahmednagar District,Rahuri,Rural
+Ahmednagar District,Shevgaon,Rural
+Ahmednagar District,Pathardi,Rural
+Ahmednagar District,Karjat (Ahmednagar),Rural
+Ahmednagar District,Nevasa,Rural
+Ahmednagar District,Parner,Rural
+Ahmednagar District,Akole,Rural
+Ahmednagar District,Jamkhed,Rural
+Ahmednagar District,Rahata,Rural
+Ahmednagar District,Shendi,Rural
+Ahmednagar District,Newasa,Rural
+Ahmednagar District,Ghargaon,Rural
+Ahmednagar District,Puntamba,Rural
+Ahmednagar District,Srirampur (City),Rural
+Ahmednagar District,Belapur (Ahmednagar),Rural
+Ahmednagar District,Chitali,Rural
+Ahmednagar District,Nimblak,Rural
+Pune District (Rural),Shirur,Rural
+Pune District (Rural),Baramati,Rural
+Pune District (Rural),Indapur,Rural
+Pune District (Rural),Daund,Rural
+Pune District (Rural),Jejuri,Rural
+Pune District (Rural),Bhor,Rural
+Pune District (Rural),Velhe,Rural
+Pune District (Rural),Mulshi,Rural
+Pune District (Rural),Maval,Rural
+Pune District (Rural),Lonavala,Rural
+Pune District (Rural),Khed (Rajgurunagar),Rural
+Pune District (Rural),Junnar,Rural
+Pune District (Rural),Ambegaon,Rural
+Pune District (Rural),Purandar,Rural
+Pune District (Rural),Supe,Rural
+Pune District (Rural),Alandi,Rural
+Pune District (Rural),Chakan (Rural),Rural
+Pune District (Rural),Manchar,Rural
+Pune District (Rural),Otur,Rural
+Pune District (Rural),Narayangaon,Rural
+Pune District (Rural),Pimpri (Rural),Rural
+Pune District (Rural),Bhosari (Rural),Rural
+Pune District (Rural),Uruli Kanchan,Rural
+Pune District (Rural),Kedgaon,Rural
+Pune District (Rural),Yavat,Rural
+Pune District (Rural),Ashtapur,Rural
+Pune District (Rural),Saswad,Rural
+Satara District,Satara,Rural
+Satara District,Karad,Rural
+Satara District,Phaltan,Rural
+Satara District,Wai,Rural
+Satara District,Mahabaleshwar,Rural
+Satara District,Koregaon,Rural
+Satara District,Khatav,Rural
+Satara District,Man,Rural
+Satara District,Khandala (Satara),Rural
+Satara District,Patan,Rural
+Satara District,Javali,Rural
+Satara District,Medha,Rural
+Satara District,Warna,Rural
+Satara District,Shirala (Satara),Rural
+Satara District,Umbraj,Rural
+Satara District,Pusegaon,Rural
+Satara District,Dahiwadi,Rural
+Satara District,Lonand,Rural
+Satara District,Mhaswad,Rural
+Satara District,Panchgani,Rural
+Sangli District,Sangli,Rural
+Sangli District,Miraj,Rural
+Sangli District,Kupwad,Rural
+Sangli District,Tasgaon,Rural
+Sangli District,Vita,Rural
+Sangli District,Atpadi,Rural
+Sangli District,Kavthe Mahankal,Rural
+Sangli District,Palus,Rural
+Sangli District,Shirala,Rural
+Sangli District,Walwa,Rural
+Sangli District,Islampur,Rural
+Sangli District,Khanapur,Rural
+Sangli District,Jat,Rural
+Sangli District,Kadegaon,Rural
+Sangli District,Yadrav,Rural
+Kolhapur District,Kolhapur,Rural
+Kolhapur District,Ichalkaranji,Rural
+Kolhapur District,Karvir,Rural
+Kolhapur District,Hatkanangle,Rural
+Kolhapur District,Shahuwadi,Rural
+Kolhapur District,Panhala,Rural
+Kolhapur District,Gadhinglaj,Rural
+Kolhapur District,Chandgad,Rural
+Kolhapur District,Ajara,Rural
+Kolhapur District,Bhudargad,Rural
+Kolhapur District,Radhanagari,Rural
+Kolhapur District,Shirol,Rural
+Kolhapur District,Kagal,Rural
+Kolhapur District,Gargoti,Rural
+Kolhapur District,Kowad,Rural
+Kolhapur District,Nesari,Rural
+Kolhapur District,Kurundwad,Rural
+Solapur District (Rural),Barshi,Rural
+Solapur District (Rural),Pandharpur,Rural
+Solapur District (Rural),Akkalkot,Rural
+Solapur District (Rural),Karmala,Rural
+Solapur District (Rural),Madha,Rural
+Solapur District (Rural),Sangole,Rural
+Solapur District (Rural),Mohol,Rural
+Solapur District (Rural),Malshiras,Rural
+Solapur District (Rural),Mangalvedha,Rural
+Solapur District (Rural),North Solapur,Rural
+Solapur District (Rural),South Solapur,Rural
+Solapur District (Rural),Kurduwadi,Rural
+Solapur District (Rural),Natepute,Rural
+Solapur District (Rural),Velapur,Rural
+Solapur District (Rural),Akluj,Rural
+Aurangabad District (Rural),Paithan,Rural
+Aurangabad District (Rural),Gangapur,Rural
+Aurangabad District (Rural),Sillod,Rural
+Aurangabad District (Rural),Soegaon,Rural
+Aurangabad District (Rural),Kannad,Rural
+Aurangabad District (Rural),Vaijapur,Rural
+Aurangabad District (Rural),Khultabad,Rural
+Aurangabad District (Rural),Phulambri,Rural
+Aurangabad District (Rural),Wadgaon Kolhati,Rural
+Aurangabad District (Rural),Lasur Station,Rural
+Aurangabad District (Rural),Pimpalgaon Gangdev,Rural
+Aurangabad District (Rural),Gevrai,Rural
+Jalna District,Jalna,Rural
+Jalna District,Ambad,Rural
+Jalna District,Badnapur,Rural
+Jalna District,Bhokardan,Rural
+Jalna District,Ghansawangi,Rural
+Jalna District,Jafrabad,Rural
+Jalna District,Mantha,Rural
+Jalna District,Partur,Rural
+Jalna District,Rajur,Rural
+Jalna District,Dharur (Jalna),Rural
+Beed District,Beed,Rural
+Beed District,Ambajogai,Rural
+Beed District,Parli Vaijnath,Rural
+Beed District,Georai,Rural
+Beed District,Kaij,Rural
+Beed District,Dharur,Rural
+Beed District,Shirur Kasar,Rural
+Beed District,Majalgaon,Rural
+Beed District,Patoda,Rural
+Beed District,Wadwani,Rural
+Beed District,Ashti (Beed),Rural
+Beed District,Shiradhon,Rural
+Osmanabad District (Dharashiv),Osmanabad,Rural
+Osmanabad District (Dharashiv),Tuljapur,Rural
+Osmanabad District (Dharashiv),Omerga,Rural
+Osmanabad District (Dharashiv),Lohara,Rural
+Osmanabad District (Dharashiv),Kalamb,Rural
+Osmanabad District (Dharashiv),Paranda,Rural
+Osmanabad District (Dharashiv),Bhum,Rural
+Osmanabad District (Dharashiv),Washi,Rural
+Osmanabad District (Dharashiv),Naldurg,Rural
+Osmanabad District (Dharashiv),Yedshi,Rural
+Latur District,Latur,Rural
+Latur District,Udgir,Rural
+Latur District,Ausa,Rural
+Latur District,Nilanga,Rural
+Latur District,Deoni,Rural
+Latur District,Chakur,Rural
+Latur District,Renapur,Rural
+Latur District,Shirur Anantpal,Rural
+Latur District,Ahmedpur,Rural
+Latur District,Jalkot,Rural
+Latur District,Murud (Latur),Rural
+Nanded District,Nanded,Rural
+Nanded District,Biloli,Rural
+Nanded District,Bhokar,Rural
+Nanded District,Mudkhed,Rural
+Nanded District,Naigaon,Rural
+Nanded District,Kinwat,Rural
+Nanded District,Hadgaon,Rural
+Nanded District,Ardhapur,Rural
+Nanded District,Kandhar,Rural
+Nanded District,Deglur,Rural
+Nanded District,Loha,Rural
+Nanded District,Umri,Rural
+Nanded District,Dharmabad,Rural
+Nanded District,Himayatnagar,Rural
+Nanded District,Mahur,Rural
+Nanded District,Mukhed,Rural
+Nanded District,Selu (Nanded),Rural
+Hingoli District,Hingoli,Rural
+Hingoli District,Basmath,Rural
+Hingoli District,Sengaon,Rural
+Hingoli District,Aundha Nagnath,Rural
+Hingoli District,Kalamnuri,Rural
+Hingoli District,Wasmat,Rural
+Hingoli District,Nagad,Rural
+Parbhani District,Parbhani,Rural
+Parbhani District,Gangakhed,Rural
+Parbhani District,Selu,Rural
+Parbhani District,Manwath,Rural
+Parbhani District,Jintur,Rural
+Parbhani District,Pathri,Rural
+Parbhani District,Purna,Rural
+Parbhani District,Sonpeth,Rural
+Parbhani District,Palam,Rural
+Parbhani District,Naigaon (Parbhani),Rural
+Washim District,Washim,Rural
+Washim District,Karanja,Rural
+Washim District,Mangrulpir,Rural
+Washim District,Risod,Rural
+Washim District,Malegaon (Washim),Rural
+Washim District,Manora,Rural
+Washim District,Ansing,Rural
+Washim District,Sailu (Washim),Rural
+Akola District,Akola,Rural
+Akola District,Akot,Rural
+Akola District,Balapur,Rural
+Akola District,Telhara,Rural
+Akola District,Patur,Rural
+Akola District,Murtizapur,Rural
+Akola District,Barshitakli,Rural
+Akola District,Hiwarkhed,Rural
+Akola District,Borgaon Manju,Rural
+Akola District,Umra (Akola),Rural
+Buldhana District,Buldhana,Rural
+Buldhana District,Khamgaon,Rural
+Buldhana District,Malkapur,Rural
+Buldhana District,Shegaon,Rural
+Buldhana District,Chikhli,Rural
+Buldhana District,Lonar,Rural
+Buldhana District,Mehkar,Rural
+Buldhana District,Motala,Rural
+Buldhana District,Nandura,Rural
+Buldhana District,Sindkhed Raja,Rural
+Buldhana District,Deulgaon Raja,Rural
+Buldhana District,Amdapur,Rural
+Buldhana District,Andhera,Rural
+Buldhana District,Bibi (Lonar),Rural
+Buldhana District,Jambrud,Rural
+Buldhana District,Palasgaon,Rural
+Yavatmal District,Yavatmal,Rural
+Yavatmal District,Wani,Rural
+Yavatmal District,Pusad,Rural
+Yavatmal District,Umarkhed,Rural
+Yavatmal District,Darwha,Rural
+Yavatmal District,Digras,Rural
+Yavatmal District,Ralegaon,Rural
+Yavatmal District,Ner,Rural
+Yavatmal District,Mahagaon,Rural
+Yavatmal District,Kalamb (Yavatmal),Rural
+Yavatmal District,Arni,Rural
+Yavatmal District,Ghatanji,Rural
+Yavatmal District,Babulgaon,Rural
+Yavatmal District,Kelapur,Rural
+Yavatmal District,Maregaon,Rural
+Yavatmal District,Zari Jamani,Rural
+Yavatmal District,Pandharkawada,Rural
+Amravati District (Rural),Achalpur,Rural
+Amravati District (Rural),Daryapur,Rural
+Amravati District (Rural),Anjangaon Surji,Rural
+Amravati District (Rural),Morshi,Rural
+Amravati District (Rural),Warud,Rural
+Amravati District (Rural),Chandur Bazar,Rural
+Amravati District (Rural),Dharni,Rural
+Amravati District (Rural),Chikhaldara,Rural
+Amravati District (Rural),Nandgaon Khandeshwar,Rural
+Amravati District (Rural),Dhamangaon Railway,Rural
+Amravati District (Rural),Chandur Railway,Rural
+Amravati District (Rural),Amravati (Rural),Rural
+Amravati District (Rural),Bhatkuli,Rural
+Amravati District (Rural),Anjangaon (Rural),Rural
+Wardha District,Wardha,Rural
+Wardha District,Hinganghat,Rural
+Wardha District,Arvi,Rural
+Wardha District,Deoli,Rural
+Wardha District,Samudrapur,Rural
+Wardha District,Seloo,Rural
+Wardha District,Ashti,Rural
+Wardha District,Pulgaon,Rural
+Wardha District,Sindi (Wardha),Rural
+Wardha District,Talegaon (Wardha),Rural
+Wardha District,Karanja (Ghadge),Rural
+Nagpur District (Rural),Ramtek,Rural
+Nagpur District (Rural),Katol,Rural
+Nagpur District (Rural),Narkhed,Rural
+Nagpur District (Rural),Savner,Rural
+Nagpur District (Rural),Kamptee,Rural
+Nagpur District (Rural),Bhiwapur,Rural
+Nagpur District (Rural),Umred,Rural
+Nagpur District (Rural),Kuhi,Rural
+Nagpur District (Rural),Parseoni,Rural
+Nagpur District (Rural),Mouda,Rural
+Nagpur District (Rural),Deori (Nagpur),Rural
+Nagpur District (Rural),Aroli,Rural
+Nagpur District (Rural),Butibori,Rural
+Nagpur District (Rural),MIDC Bori,Rural
+Nagpur District (Rural),Bela,Rural
+Nagpur District (Rural),Khapa,Rural
+Nagpur District (Rural),Kalmeshwar,Rural
+Nagpur District (Rural),Kanhan,Rural
+Nagpur District (Rural),Kondali,Rural
+Nagpur District (Rural),Jalalkheda,Rural
+Nagpur District (Rural),Veltur,Rural
+Nagpur District (Rural),Devlapar,Rural
+Nagpur District (Rural),Wadoda,Rural
+Nagpur District (Rural),Kelwad,Rural
+Bhandara District,Bhandara,Rural
+Bhandara District,Tumsar,Rural
+Bhandara District,Sakoli,Rural
+Bhandara District,Lakhani,Rural
+Bhandara District,Mohadi,Rural
+Bhandara District,Pauni,Rural
+Bhandara District,Bhandara (City),Rural
+Bhandara District,Ambagad Chowki,Rural
+Bhandara District,Ukani,Rural
+Bhandara District,Tirora,Rural
+Gondia District,Gondia,Rural
+Gondia District,Tirora,Rural
+Gondia District,Amgaon,Rural
+Gondia District,Goregaon (Gondia),Rural
+Gondia District,Arjuni Morgaon,Rural
+Gondia District,Deori,Rural
+Gondia District,Salekasa,Rural
+Gondia District,Sadak Arjuni,Rural
+Gondia District,Navegaon Bandh,Rural
+Gondia District,Kurkheda (Gondia),Rural
+Chandrapur District,Ramnagar,Rural
+Chandrapur District,Babupeth,Rural
+Chandrapur District,City Chandrapur,Rural
+Chandrapur District,Durgapur (Chandrapur),Rural
+Chandrapur District,Ballarpur,Rural
+Chandrapur District,Warora,Rural
+Chandrapur District,Majri,Rural
+Chandrapur District,Ghuggus,Rural
+Chandrapur District,Bhadravati,Rural
+Chandrapur District,Shegaon (Chandrapur),Rural
+Chandrapur District,Rajura,Rural
+Chandrapur District,Gondpipri,Rural
+Chandrapur District,Kothari,Rural
+Chandrapur District,Virur,Rural
+Chandrapur District,Pombhurna,Rural
+Chandrapur District,Gadchandur,Rural
+Chandrapur District,Brahmapuri,Rural
+Chandrapur District,Nagbhid,Rural
+Chandrapur District,Chimur,Rural
+Chandrapur District,Sindewahi,Rural
+Chandrapur District,Mul,Rural
+Chandrapur District,Jivati,Rural
+Chandrapur District,Saoli,Rural
+Chandrapur District,Korpana,Rural
+Chandrapur District,Awalpur,Rural
+Chandrapur District,Mandki,Rural
+Chandrapur District,Navargaon,Rural
+Chandrapur District,Benbal,Rural
+Chandrapur District,Pothari,Rural
+Gadchiroli District,Gadchiroli,Rural
+Gadchiroli District,Aheri,Rural
+Gadchiroli District,Sironcha,Rural
+Gadchiroli District,Desaiganj (Vadsa),Rural
+Gadchiroli District,Kurkheda,Rural
+Gadchiroli District,Etapalli,Rural
+Gadchiroli District,Bhamragad,Rural
+Gadchiroli District,Chamorshi,Rural
+Gadchiroli District,Dhanora,Rural
+Gadchiroli District,Armori,Rural
+Gadchiroli District,Mulchera,Rural
+Gadchiroli District,Korchi,Rural
+Gadchiroli District,Wadsa,Rural
+Gadchiroli District,Allapalli,Rural
+Gadchiroli District,Murumgaon,Rural
+Gadchiroli District,Rajaram (Gadchiroli),Rural

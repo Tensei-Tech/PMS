@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="Official Police Management System - A comprehensive administration and case management portal.">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Police System">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>Police Management System</title>
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Firebase JS SDKs to prevent dynamic injection hangs on startup -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-messaging-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
+
+  <!-- Browser Web Speech Recognition API Integration -->
+  <script>
+    window.voiceRecognizer = {
+      recognition: null,
+      stream: null,
+      start: function() {
+        var self = this;
+        var SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRec) {
+          window.dispatchEvent(new CustomEvent('voice_status', { 
+            detail: { status: 'unsupported', message: 'Speech Recognition is not supported in this browser. Please use Chrome or Edge.' } 
+          }));
+          return;
+        }
+
+        // Request browser microphone permission directly to trigger Chrome's Allow prompt
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          navigator.mediaDevices.getUserMedia({ audio: true }).then(function(s) {
+            self.stream = s;
+            self._startSpeech(SpeechRec);
+          }).catch(function(err) {
+            console.warn("getUserMedia error:", err);
+            // Still try starting speech directly
+            self._startSpeech(SpeechRec);
+          });
+        } else {
+          self._startSpeech(SpeechRec);
+        }
+      },
+      _startSpeech: function(SpeechRec) {
+        try {
+          if (this.recognition) {
+            try { this.recognition.abort(); } catch(e){}
+          }
+          var rec = new SpeechRec();
+          this.recognition = rec;
+          rec.continuous = false;
+          rec.interimResults = true;
+          rec.maxAlternatives = 3;
+          rec.lang = 'en-IN';
+
+          rec.onstart = function() {
+            window.dispatchEvent(new CustomEvent('voice_status', { 
+              detail: { status: 'listening', message: 'Listening... Speak now into your mic!' } 
+            }));
+          };
+
+          rec.onresult = function(event) {
+            var text = '';
+            for (var i = event.resultIndex; i < event.results.length; ++i) {
+              text += event.results[i][0].transcript;
+            }
+            var isFinal = event.results[event.results.length - 1].isFinal;
+            window.dispatchEvent(new CustomEvent('voice_result', { 
+              detail: { text: text, isFinal: isFinal } 
+            }));
+          };
+
+          rec.onerror = function(event) {
+            var msg = "Voice error: " + event.error;
+            if (event.error === 'not-allowed') {
+              msg = "Microphone access blocked. Click the lock icon 🔒 near the address bar to Allow microphone.";
+            } else if (event.error === 'no-speech') {
+              msg = "No speech detected. Tap the mic to try speaking again.";
+            } else if (event.error === 'audio-capture') {
+              msg = "No microphone hardware found. Please plug in a microphone.";
+            }
+            window.dispatchEvent(new CustomEvent('voice_status', { 
+              detail: { status: 'error', message: msg } 
+            }));
+          };
+
+          rec.onend = function() {
+            window.dispatchEvent(new CustomEvent('voice_status', { 
+              detail: { status: 'ended', message: 'Microphone stopped' } 
+            }));
+          };
+
+          rec.start();
+        } catch (err) {
+          console.error("Speech recognition error:", err);
+          window.dispatchEvent(new CustomEvent('voice_status', { 
+            detail: { status: 'error', message: 'Could not start microphone: ' + err.message } 
+          }));
+        }
+      },
+      stop: function() {
+        if (this.recognition) {
+          try { this.recognition.abort(); } catch(e){}
+          this.recognition = null;
+        }
+        if (this.stream) {
+          try {
+            this.stream.getTracks().forEach(function(t) { t.stop(); });
+          } catch(e){}
+          this.stream = null;
+        }
+      }
+    };
+  </script>
+</head>
+<body>
+  <!--
+    You can customize the "flutter_bootstrap.js" script.
+    This is useful to provide a custom configuration to the Flutter loader
+    or to give the user feedback during the initialization process.
+
+    For more details:
+    * https://docs.flutter.dev/platform-integration/web/initialization
+  -->
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>
