@@ -170,5 +170,12 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin() || isAuthenticated();
     }
+
+    // =========================================================================
+    // 🛡️ 9. CASE REMINDERS & SUPERVISORY DIRECTIVES
+    // =========================================================================
+    match /case_reminders/{reminderId} {
+      allow read, write: if isAuthenticated();
+    }
   }
 }

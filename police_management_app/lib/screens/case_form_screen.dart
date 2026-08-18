@@ -370,6 +370,14 @@ class _CaseFormScreenState extends State<CaseFormScreen> {
               stationName: isEdit && widget.existingCase!.stationName.isNotEmpty
                   ? widget.existingCase!.stationName
                   : auth.stationName,
+              extraFields: {
+                if (isEdit && widget.existingCase != null)
+                  ...widget.existingCase!.extraFields,
+                'lastEditedByUid': auth.uid,
+                'lastEditedByName': auth.displayName,
+                'lastEditedByDesignation': auth.designation,
+                'lastEditedAt': DateTime.now().toIso8601String(),
+              },
             );
 
             if (isEdit) {

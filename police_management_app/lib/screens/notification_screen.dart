@@ -9,8 +9,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import '../providers/auth_provider.dart';
 import '../providers/notification_provider.dart';
+import '../services/firestore_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/app_constants.dart';
+import '../utils/police_rbac_helper.dart';
 
 class NotificationScreen extends StatelessWidget {
   const NotificationScreen({super.key});
@@ -18,163 +22,248 @@ class NotificationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<NotificationProvider>();
+    final auth = context.watch<AuthProvider>();
     final items = provider.notifications;
+    final firestore = FirestoreService();
 
-    return Scaffold(
-      backgroundColor: AppColors.lightBg,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.navyDark),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: AppColors.lightBg,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          surfaceTintColor: Colors.transparent,
+          leading: IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon:
+                const Icon(Icons.arrow_back_rounded, color: AppColors.navyDark),
+          ),
+          title: Text(
+            'Notifications & Reminders',
+            style: GoogleFonts.poppins(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: AppColors.navyDark,
+            ),
+          ),
+          bottom: TabBar(
+            labelColor: AppColors.warningOrange,
+            unselectedLabelColor: AppColors.lightSubText,
+            indicatorColor: AppColors.warningOrange,
+            indicatorWeight: 3,
+            labelStyle: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+            tabs: const [
+              Tab(
+                icon: Icon(Icons.notifications_active_rounded, size: 18),
+                text: 'Case Reminders',
+              ),
+              Tab(
+                icon: Icon(Icons.mark_email_unread_rounded, size: 18),
+                text: 'System Alerts',
+              ),
+            ],
+          ),
         ),
-        title: Row(
+        body: TabBarView(
+          children: [
+            // ── TAB 1: Live Case Reminders from Firestore ──────────────────
+            StreamBuilder<List<Map<String, dynamic>>>(
+              stream: SeniorOfficerRoles.isCpLevel(auth.designation) ||
+                      SeniorOfficerRoles.isSpLevel(auth.designation)
+                  ? firestore.getAllRemindersStream()
+                  : (auth.isSupervisor || auth.isAdmin)
+                      ? firestore.getSentRemindersStream(auth.uid)
+                      : (auth.stationName.isNotEmpty
+                          ? firestore.getStationRemindersStream(auth.stationName)
+                          : firestore.getIoRemindersStream(auth.uid)),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                final reminders = snapshot.data ?? [];
+                final isSenior = SeniorOfficerRoles.isCpLevel(auth.designation) ||
+                    SeniorOfficerRoles.isSpLevel(auth.designation) ||
+                    auth.isSupervisor;
+
+                if (reminders.isEmpty) {
+                  return _buildEmptyRemindersState(isSenior: isSenior);
+                }
+
+                return ListView.separated(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  itemCount: reminders.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final r = reminders[index];
+                    return _buildReminderCard(r, isSenior: isSenior);
+                  },
+                );
+              },
+            ),
+
+            // ── TAB 2: System / FCM Alerts ────────────────────────────────
+            items.isEmpty ? _buildEmptyState() : _buildList(items),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyRemindersState({required bool isSenior}) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.goldPrimary.withValues(alpha: 0.12),
+                color: AppColors.warningOrange.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.notifications_active_rounded,
-                  color: AppColors.goldPrimary, size: 20),
+              child: const Icon(
+                Icons.notifications_none_rounded,
+                size: 48,
+                color: AppColors.warningOrange,
+              ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(height: 16),
             Text(
-              'Notifications',
+              isSenior ? 'No Directives Issued Yet' : 'No Case Reminders',
               style: GoogleFonts.poppins(
-                fontSize: 18,
+                fontSize: 17,
                 fontWeight: FontWeight.w700,
                 color: AppColors.navyDark,
               ),
             ),
-            if (items.isNotEmpty) ...[
-              const SizedBox(width: 8),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.navyMid.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '${items.length}',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.navyMid,
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Copy FCM Token',
-            onPressed: () async {
-              try {
-                // NOTE: Same VAPID key as in fcm_service.dart
-                final token = await FirebaseMessaging.instance.getToken(
-                  vapidKey: kIsWeb ? 'YOUR_VAPID_KEY_HERE_REPLACE_ME' : null,
-                );
-                if (!context.mounted) return;
-                
-                if (token != null) {
-                  await Clipboard.setData(ClipboardData(text: token));
-                  if (!context.mounted) return;
-                  showDialog(
-                    context: context,
-                    builder: (_) => AlertDialog(
-                      title: Text('FCM Token (Copied)', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16)),
-                      content: SelectableText(token, style: GoogleFonts.poppins(fontSize: 12)),
-                      actions: [
-                        TextButton(onPressed: () => Navigator.pop(context), child: Text('OK', style: GoogleFonts.poppins()))
-                      ],
-                    ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Token is null', style: GoogleFonts.poppins(color: Colors.white)), backgroundColor: AppColors.dangerRed),
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  showDialog(
-                    context: context,
-                    builder: (_) => AlertDialog(
-                      title: Text('Error getting token', style: GoogleFonts.poppins(color: AppColors.dangerRed, fontWeight: FontWeight.bold)),
-                      content: SelectableText(e.toString(), style: GoogleFonts.poppins(fontSize: 12)),
-                      actions: [
-                        TextButton(onPressed: () => Navigator.pop(context), child: Text('OK', style: GoogleFonts.poppins()))
-                      ],
-                    ),
-                  );
-                }
-              }
-            },
-            icon: const Icon(Icons.copy_rounded, color: AppColors.navyDark),
-          ),
-          if (items.isNotEmpty)
-            TextButton.icon(
-              onPressed: () => _confirmClearAll(context, provider),
-              icon: const Icon(Icons.delete_sweep_rounded,
-                  size: 18, color: AppColors.dangerRed),
-              label: Text(
-                'Clear All',
-                style: GoogleFonts.poppins(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.dangerRed,
-                ),
+            const SizedBox(height: 6),
+            Text(
+              isSenior
+                  ? 'Supervisory reminders (PCR, FSL, Charge Sheet) you issue to Investigating Officers will be tracked here.'
+                  : 'Supervisory reminders sent by Senior Officers will appear here.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 12.5,
+                color: AppColors.lightSubText,
               ),
             ),
-          const SizedBox(width: 4),
-        ],
+          ],
+        ),
       ),
-      body: items.isEmpty ? _buildEmptyState() : _buildList(items),
     );
   }
 
-  void _confirmClearAll(BuildContext context, NotificationProvider provider) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Clear All Notifications',
-            style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w700,
-                fontSize: 16,
-                color: AppColors.navyDark)),
-        content: Text(
-            'Are you sure you want to remove all notifications?',
-            style: GoogleFonts.poppins(
-                fontSize: 14, color: AppColors.lightSubText)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel',
-                style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.lightSubText)),
+  Widget _buildReminderCard(Map<String, dynamic> r, {required bool isSenior}) {
+    final reminderType = r['reminderType'] ?? 'Supervisory Reminder';
+    final caseNo = r['caseNumber'] ?? r['caseTitle'] ?? 'Case';
+    final sentByName = r['sentByName'] ?? 'Senior Officer';
+    final sentByRank = r['sentByDesignation'] ?? '';
+    final ioName = r['ioName'] ?? 'Assigned IO';
+    final stationName = r['stationName'] ?? '';
+    final notes = r['notes'] ?? '';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(
+          color: AppColors.warningOrange.withValues(alpha: 0.3),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
-          ElevatedButton(
-            onPressed: () {
-              provider.clearAll();
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.dangerRed,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
+        ],
+      ),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.warningOrange.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(AppRadius.full),
+                ),
+                child: Text(
+                  reminderType,
+                  style: GoogleFonts.poppins(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.warningOrange,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              Text(
+                caseNo,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.navyMid,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            isSenior
+                ? 'Assigned IO: $ioName ${stationName.isNotEmpty ? '• $stationName' : ''}'
+                : 'From: $sentByName ${sentByRank.isNotEmpty ? '($sentByRank)' : ''}',
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.navyDark,
             ),
-            child: Text('Clear All',
-                style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600, color: Colors.white)),
           ),
+          if (isSenior) ...[
+            const SizedBox(height: 2),
+            Text(
+              'Issued By: $sentByName ${sentByRank.isNotEmpty ? '($sentByRank)' : ''}',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: AppColors.lightSubText,
+              ),
+            ),
+          ] else if (ioName.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              'Directed To: $ioName',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: AppColors.lightSubText,
+              ),
+            ),
+          ],
+          if (notes.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.lightBg,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              child: Text(
+                'Directive: $notes',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontStyle: FontStyle.italic,
+                  color: AppColors.navyDark,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -200,9 +289,9 @@ class NotificationScreen extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           Text(
-            'No Notifications',
+            'No System Alerts',
             style: GoogleFonts.poppins(
-              fontSize: 18,
+              fontSize: 17,
               fontWeight: FontWeight.w700,
               color: AppColors.navyDark,
             ),
@@ -211,7 +300,7 @@ class NotificationScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 48),
             child: Text(
-              'You\'re all caught up! New notifications will appear here.',
+              'You\'re all caught up! Push notifications will appear here.',
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 13,

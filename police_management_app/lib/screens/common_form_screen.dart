@@ -1057,6 +1057,10 @@ class _CommonFormScreenState extends State<CommonFormScreen> {
       widget.existingRecord?.extraFields ?? {},
     );
     extra[kCommonFormExtraFieldsKey] = doc;
+    extra['lastEditedByUid'] = auth.uid;
+    extra['lastEditedByName'] = auth.displayName;
+    extra['lastEditedByDesignation'] = auth.designation;
+    extra['lastEditedAt'] = DateTime.now().toIso8601String();
     if (!_isCrimeDetailForm && _hasKidnappingExtras) {
       final kData = _kidnappingKey.currentState?.collectData();
       if (kData != null && kData.isNotEmpty) {

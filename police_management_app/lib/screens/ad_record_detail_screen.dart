@@ -12,6 +12,8 @@ import '../services/firestore_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/ad_firestore_payload.dart';
 import '../utils/case_visibility.dart';
+import '../utils/police_rbac_helper.dart';
+import '../widgets/send_reminder_dialog.dart';
 import '../widgets/access_denied_view.dart';
 import '../widgets/ad_form_dynamic_document_view.dart';
 import 'ad_form_screen.dart';
@@ -396,28 +398,58 @@ class _AdRecordDetailScreenState extends State<AdRecordDetailScreen> {
       ),
       floatingActionButton: !showContent
           ? null
-          : FloatingActionButton.extended(
-              heroTag: 'ad_edit_btn',
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  AppTheme.fadeSlideRoute(
-                    page: ADFormScreen(
-                      existingRecord: _hubRecord,
-                      popCountAfterSubmit: 2,
+          : Builder(builder: (ctx) {
+              final canEdit =
+                  PoliceRbacHelper.canEditRecord(_hubRecord, auth);
+              final canSendReminder = PoliceRbacHelper.canSendReminder(auth);
+
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (canSendReminder) ...[
+                    FloatingActionButton.extended(
+                      heroTag: 'ad_reminder_btn',
+                      onPressed: () =>
+                          SendReminderDialog.show(context, _hubRecord),
+                      backgroundColor: AppColors.warningOrange,
+                      icon: const Icon(Icons.notifications_active_rounded,
+                          color: Colors.white),
+                      label: Text(
+                        'Send Reminder to IO',
+                        style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600, color: Colors.white),
+                      ),
                     ),
-                  ),
-                );
-              },
-              backgroundColor: AppColors.goldPrimary,
-              icon: const Icon(Icons.edit_note_rounded,
-                  color: AppColors.navyDark),
-              label: Text(
-                'Edit Record',
-                style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600, color: AppColors.navyDark),
-              ),
-            ),
+                    const SizedBox(height: 12),
+                  ],
+                  if (canEdit) ...[
+                    FloatingActionButton.extended(
+                      heroTag: 'ad_edit_btn',
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          AppTheme.fadeSlideRoute(
+                            page: ADFormScreen(
+                              existingRecord: _hubRecord,
+                              popCountAfterSubmit: 2,
+                            ),
+                          ),
+                        );
+                      },
+                      backgroundColor: AppColors.goldPrimary,
+                      icon: const Icon(Icons.edit_note_rounded,
+                          color: AppColors.navyDark),
+                      label: Text(
+                        'Edit Record',
+                        style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.navyDark),
+                      ),
+                    ),
+                  ],
+                ],
+              );
+            }),
     );
   }
 

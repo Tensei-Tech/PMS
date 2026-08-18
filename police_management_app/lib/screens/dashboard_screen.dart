@@ -46,6 +46,9 @@ import '../utils/module_pdf_helper.dart';
 import '../utils/pdf_auth_gate.dart';
 import 'report_case_list_screen.dart';
 import 'my_cases_screen.dart';
+import '../utils/police_rbac_helper.dart';
+import '../widgets/send_reminder_dialog.dart';
+import 'analytics_performance_screen.dart';
 import 'module_form_screen.dart';
 import 'common_form_screen.dart';
 import '../utils/common_form_module.dart';
@@ -1999,6 +2002,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             )
                           : null,
                       onTap: () => _showStationSwitcher(context, auth),
+                    ),
+                    const Divider(height: 1),
+                  ],
+                  if (SeniorOfficerRoles.canSwitchLocation(auth.designation) ||
+                      auth.isSupervisor ||
+                      auth.isAdmin) ...[
+                    _drawerItem(
+                      Icons.analytics_rounded,
+                      'Crime Analytics & Performance',
+                      () => Navigator.push(
+                        context,
+                        AppTheme.fadeSlideRoute(
+                          page: const AnalyticsPerformanceScreen(),
+                        ),
+                      ),
                     ),
                     const Divider(height: 1),
                   ],
@@ -4874,67 +4892,95 @@ class _ViewTabState extends State<_ViewTab> {
                                               ),
                                               const Divider(height: 20),
 
-                                              // Actions Row: Edit, PDF, View
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceAround,
-                                                children: [
-                                                  _buildCardAction(
-                                                    icon:
-                                                        Icons.edit_note_rounded,
-                                                    label: 'Edit',
-                                                    color: AppColors.infoBlue,
-                                                    onTap: () {
-                                                      Navigator.push(
-                                                        context,
-                                                        AppTheme.fadeSlideRoute(
-                                                          page: CommonFormScreen(
-                                                            moduleKey:
-                                                                c.moduleKey,
-                                                            moduleLabel: c
-                                                                .firestoreCategoryDisplayName,
-                                                            existingRecord: c,
+                                              // Actions Row: Edit (Guarded), Reminder (Senior Only), PDF, View
+                                              Builder(builder: (ctx) {
+                                                final canEdit =
+                                                    PoliceRbacHelper
+                                                        .canEditRecord(c, auth);
+                                                final canSendReminder =
+                                                    PoliceRbacHelper
+                                                        .canSendReminder(auth);
+
+                                                return Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceAround,
+                                                  children: [
+                                                    if (canEdit)
+                                                      _buildCardAction(
+                                                        icon: Icons
+                                                            .edit_note_rounded,
+                                                        label: 'Edit',
+                                                        color:
+                                                            AppColors.infoBlue,
+                                                        onTap: () {
+                                                          Navigator.push(
+                                                            context,
+                                                            AppTheme
+                                                                .fadeSlideRoute(
+                                                              page:
+                                                                  CommonFormScreen(
+                                                                moduleKey:
+                                                                    c.moduleKey,
+                                                                moduleLabel: c
+                                                                    .firestoreCategoryDisplayName,
+                                                                existingRecord:
+                                                                    c,
+                                                             ),
+                                                            ),
+                                                          );
+                                                        },
+                                                      ),
+                                                    if (canSendReminder)
+                                                      _buildCardAction(
+                                                        icon: Icons
+                                                            .notifications_active_outlined,
+                                                        label: 'Reminder',
+                                                        color: AppColors
+                                                            .warningOrange,
+                                                        onTap: () {
+                                                          SendReminderDialog
+                                                              .show(context, c);
+                                                        },
+                                                      ),
+                                                    _buildCardAction(
+                                                      icon: Icons
+                                                          .picture_as_pdf_rounded,
+                                                      label: 'PDF',
+                                                      color:
+                                                          AppColors.dangerRed,
+                                                      onTap: () {
+                                                        runWithPdfAuthGate(
+                                                          context,
+                                                          () => ModulePdfHelper
+                                                              .generatePdf(c),
+                                                        );
+                                                      },
+                                                    ),
+                                                    _buildCardAction(
+                                                      icon: Icons
+                                                          .visibility_rounded,
+                                                      label: 'View',
+                                                      color:
+                                                          AppColors.goldPrimary,
+                                                      onTap: () {
+                                                        Navigator.push(
+                                                          context,
+                                                          AppTheme
+                                                            .fadeSlideRoute(
+                                                            page: c.moduleKey ==
+                                                                    'ad'
+                                                                ? AdRecordDetailScreen(
+                                                                    record: c)
+                                                                : ModuleRecordDetailScreen(
+                                                                    record: c),
                                                           ),
-                                                        ),
-                                                      );
-                                                    },
-                                                  ),
-                                                  _buildCardAction(
-                                                    icon: Icons
-                                                        .picture_as_pdf_rounded,
-                                                    label: 'PDF',
-                                                    color: AppColors.dangerRed,
-                                                    onTap: () {
-                                                      runWithPdfAuthGate(
-                                                        context,
-                                                        () => ModulePdfHelper
-                                                            .generatePdf(c),
-                                                      );
-                                                    },
-                                                  ),
-                                                  _buildCardAction(
-                                                    icon: Icons
-                                                        .visibility_rounded,
-                                                    label: 'View',
-                                                    color:
-                                                        AppColors.goldPrimary,
-                                                    onTap: () {
-                                                      Navigator.push(
-                                                        context,
-                                                        AppTheme.fadeSlideRoute(
-                                                          page: c.moduleKey ==
-                                                                  'ad'
-                                                              ? AdRecordDetailScreen(
-                                                                  record: c)
-                                                              : ModuleRecordDetailScreen(
-                                                                  record: c),
-                                                        ),
-                                                      );
-                                                    },
-                                                  ),
-                                                ],
-                                              ),
+                                                        );
+                                                      },
+                                                    ),
+                                                  ],
+                                                );
+                                              }),
                                             ],
                                           ),
                                         ),

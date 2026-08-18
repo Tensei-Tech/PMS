@@ -13,6 +13,8 @@ import '../providers/auth_provider.dart';
 import '../services/firestore_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/case_visibility.dart';
+import '../utils/police_rbac_helper.dart';
+import '../widgets/send_reminder_dialog.dart';
 import '../utils/common_form_module.dart';
 import '../utils/module_pdf_helper.dart';
 import '../utils/pdf_auth_gate.dart';
@@ -134,52 +136,76 @@ class _ModuleRecordDetailScreenState extends State<ModuleRecordDetailScreen> {
             ),
       floatingActionButton: _recordDeleted || !showContent
           ? null
-          : Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FloatingActionButton.extended(
-                  heroTag: 'pdf_module_btn',
-                  onPressed: () => runWithPdfAuthGate(
-                    context,
-                    () => ModulePdfHelper.generatePdf(_record),
+          : Builder(builder: (ctx) {
+              final auth = context.watch<AuthProvider>();
+              final canEdit = PoliceRbacHelper.canEditRecord(_record, auth);
+              final canSendReminder = PoliceRbacHelper.canSendReminder(auth);
+
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  FloatingActionButton.extended(
+                    heroTag: 'pdf_module_btn',
+                    onPressed: () => runWithPdfAuthGate(
+                      context,
+                      () => ModulePdfHelper.generatePdf(_record),
+                    ),
+                    backgroundColor: AppColors.dangerRed,
+                    icon: const Icon(Icons.picture_as_pdf_rounded,
+                        color: Colors.white),
+                    label: Text(
+                      'Download PDF',
+                      style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600, color: Colors.white),
+                    ),
                   ),
-                  backgroundColor: AppColors.dangerRed,
-                  icon: const Icon(Icons.picture_as_pdf_rounded,
-                      color: Colors.white),
-                  label: Text(
-                    'Download PDF',
-                    style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w600, color: Colors.white),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                FloatingActionButton.extended(
-                  heroTag: 'edit_module_btn',
-                  onPressed: () => _openEdit(context, moduleLabel),
-                  backgroundColor: AppColors.goldPrimary,
-                  icon: const Icon(Icons.edit_note_rounded,
-                      color: AppColors.navyDark),
-                  label: Text(
-                    'Edit Record',
-                    style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w600, color: AppColors.navyDark),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                FloatingActionButton.extended(
-                  heroTag: 'delete_module_btn',
-                  onPressed: () => _confirmDeleteRecord(),
-                  backgroundColor: AppColors.dangerRed,
-                  icon: const Icon(Icons.delete_outline_rounded,
-                      color: Colors.white),
-                  label: Text(
-                    'Delete',
-                    style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w600, color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
+                  if (canSendReminder) ...[
+                    const SizedBox(height: 12),
+                    FloatingActionButton.extended(
+                      heroTag: 'reminder_module_btn',
+                      onPressed: () => SendReminderDialog.show(context, _record),
+                      backgroundColor: AppColors.warningOrange,
+                      icon: const Icon(Icons.notifications_active_rounded,
+                          color: Colors.white),
+                      label: Text(
+                        'Send Reminder to IO',
+                        style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600, color: Colors.white),
+                      ),
+                    ),
+                  ],
+                  if (canEdit) ...[
+                    const SizedBox(height: 12),
+                    FloatingActionButton.extended(
+                      heroTag: 'edit_module_btn',
+                      onPressed: () => _openEdit(context, moduleLabel),
+                      backgroundColor: AppColors.goldPrimary,
+                      icon: const Icon(Icons.edit_note_rounded,
+                          color: AppColors.navyDark),
+                      label: Text(
+                        'Edit Record',
+                        style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.navyDark),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    FloatingActionButton.extended(
+                      heroTag: 'delete_module_btn',
+                      onPressed: () => _confirmDeleteRecord(),
+                      backgroundColor: AppColors.dangerRed,
+                      icon: const Icon(Icons.delete_outline_rounded,
+                          color: Colors.white),
+                      label: Text(
+                        'Delete',
+                        style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600, color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ],
+              );
+            }),
     );
   }
 

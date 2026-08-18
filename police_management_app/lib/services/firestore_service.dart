@@ -656,4 +656,106 @@ class FirestoreService {
       'accountStatus': UserAccountStatus.rejected,
     });
   }
+
+  // ── CASE REMINDERS & SUPERVISION NOTICES ─────────────────────────────────
+  static const String colReminders = 'case_reminders';
+
+  Future<void> sendCaseReminder({
+    required String caseId,
+    required String caseNumber,
+    required String caseTitle,
+    required String stationName,
+    required String ioName,
+    required String ioUid,
+    required String sentByUid,
+    required String sentByName,
+    required String sentByDesignation,
+    required String reminderType,
+    String notes = '',
+  }) async {
+    final reminderId = '${DateTime.now().millisecondsSinceEpoch}';
+    final reminderData = {
+      'id': reminderId,
+      'caseId': caseId,
+      'caseNumber': caseNumber,
+      'caseTitle': caseTitle,
+      'stationName': stationName,
+      'ioName': ioName,
+      'ioUid': ioUid,
+      'sentByUid': sentByUid,
+      'sentByName': sentByName,
+      'sentByDesignation': sentByDesignation,
+      'reminderType': reminderType,
+      'notes': notes,
+      'status': 'pending',
+      'createdAt': DateTime.now().toIso8601String(),
+    };
+
+    // 1. Update case directly in Firestore (permitted by existing rules)
+    if (caseId.trim().isNotEmpty) {
+      try {
+        await _db.collection(colCases).doc(caseId.trim()).set({
+          'activeReminder': reminderData,
+          'hasActiveReminder': true,
+        }, SetOptions(merge: true));
+      } catch (e) {
+        debugPrint('[FirestoreService] Case document reminder update: $e');
+      }
+    }
+
+    // 2. Also save to colReminders if collection rules are enabled
+    try {
+      await _db.collection(colReminders).doc(reminderId).set(reminderData);
+    } catch (e) {
+      debugPrint('[FirestoreService] case_reminders write notice: $e');
+    }
+  }
+
+  Stream<List<Map<String, dynamic>>> getIoRemindersStream(String ioUid) {
+    return _db
+        .collection(colCases)
+        .where('hasActiveReminder', isEqualTo: true)
+        .snapshots()
+        .map((snap) => snap.docs
+            .map((d) => d.data()['activeReminder'] as Map<String, dynamic>?)
+            .where((r) => r != null)
+            .cast<Map<String, dynamic>>()
+            .toList());
+  }
+
+  Stream<List<Map<String, dynamic>>> getStationRemindersStream(String stationName) {
+    return _db
+        .collection(colCases)
+        .where('hasActiveReminder', isEqualTo: true)
+        .snapshots()
+        .map((snap) => snap.docs
+            .map((d) => d.data()['activeReminder'] as Map<String, dynamic>?)
+            .where((r) => r != null)
+            .cast<Map<String, dynamic>>()
+            .toList());
+  }
+
+  Stream<List<Map<String, dynamic>>> getSentRemindersStream(String sentByUid) {
+    return _db
+        .collection(colCases)
+        .where('hasActiveReminder', isEqualTo: true)
+        .snapshots()
+        .map((snap) => snap.docs
+            .map((d) => d.data()['activeReminder'] as Map<String, dynamic>?)
+            .where((r) => r != null)
+            .cast<Map<String, dynamic>>()
+            .toList());
+  }
+
+  Stream<List<Map<String, dynamic>>> getAllRemindersStream() {
+    return _db
+        .collection(colCases)
+        .where('hasActiveReminder', isEqualTo: true)
+        .snapshots()
+        .map((snap) => snap.docs
+            .map((d) => d.data()['activeReminder'] as Map<String, dynamic>?)
+            .where((r) => r != null)
+            .cast<Map<String, dynamic>>()
+            .toList());
+  }
 }

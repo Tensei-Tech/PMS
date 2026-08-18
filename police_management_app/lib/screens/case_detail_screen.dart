@@ -9,6 +9,8 @@ import '../providers/auth_provider.dart';
 import '../services/firestore_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/case_visibility.dart';
+import '../utils/police_rbac_helper.dart';
+import '../widgets/send_reminder_dialog.dart';
 import '../utils/pdf_auth_gate.dart';
 import '../utils/pdf_helper.dart';
 import '../widgets/access_denied_view.dart';
@@ -88,50 +90,72 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
               ? _buildDeletedBody()
               : _buildLiveBody(context),
       floatingActionButton: widget.showFloatingActions && showContent
-          ? Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FloatingActionButton.extended(
-                  heroTag: 'pdf_btn',
-                  onPressed: () => runWithPdfAuthGate(
-                    context,
-                    () => PdfHelper.generateCasePdf(_record),
-                  ),
-                  backgroundColor: AppColors.dangerRed,
-                  icon: const Icon(Icons.picture_as_pdf_rounded,
-                      color: Colors.white),
-                  label: Text(
-                    'Download PDF',
-                    style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w600, color: Colors.white),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                FloatingActionButton.extended(
-                  heroTag: 'edit_btn',
-                  onPressed: () {
-                    Navigator.push(
+          ? Builder(builder: (ctx) {
+              final canEdit = PoliceRbacHelper.canEditRecord(_record, auth);
+              final canSendReminder = PoliceRbacHelper.canSendReminder(auth);
+
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  FloatingActionButton.extended(
+                    heroTag: 'pdf_btn',
+                    onPressed: () => runWithPdfAuthGate(
                       context,
-                      AppTheme.fadeSlideRoute(
-                        page: CaseFormScreen(
-                          categoryName: _record.category,
-                          existingCase: _record,
-                        ),
-                      ),
-                    );
-                  },
-                  backgroundColor: AppColors.goldPrimary,
-                  icon: const Icon(Icons.edit_note_rounded,
-                      color: AppColors.navyDark),
-                  label: Text(
-                    'Edit Record',
-                    style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.navyDark),
+                      () => PdfHelper.generateCasePdf(_record),
+                    ),
+                    backgroundColor: AppColors.dangerRed,
+                    icon: const Icon(Icons.picture_as_pdf_rounded,
+                        color: Colors.white),
+                    label: Text(
+                      'Download PDF',
+                      style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600, color: Colors.white),
+                    ),
                   ),
-                ),
-              ],
-            )
+                  if (canSendReminder) ...[
+                    const SizedBox(height: 12),
+                    FloatingActionButton.extended(
+                      heroTag: 'reminder_btn',
+                      onPressed: () => SendReminderDialog.show(context, _record),
+                      backgroundColor: AppColors.warningOrange,
+                      icon: const Icon(Icons.notifications_active_rounded,
+                          color: Colors.white),
+                      label: Text(
+                        'Send Reminder to IO',
+                        style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600, color: Colors.white),
+                      ),
+                    ),
+                  ],
+                  if (canEdit) ...[
+                    const SizedBox(height: 12),
+                    FloatingActionButton.extended(
+                      heroTag: 'edit_btn',
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          AppTheme.fadeSlideRoute(
+                            page: CaseFormScreen(
+                              categoryName: _record.category,
+                              existingCase: _record,
+                            ),
+                          ),
+                        );
+                      },
+                      backgroundColor: AppColors.goldPrimary,
+                      icon: const Icon(Icons.edit_note_rounded,
+                          color: AppColors.navyDark),
+                      label: Text(
+                        'Edit Record',
+                        style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.navyDark),
+                      ),
+                    ),
+                  ],
+                ],
+              );
+            })
           : null,
     );
   }
