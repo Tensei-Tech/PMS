@@ -44,7 +44,7 @@
     window.voiceRecognizer = {
       recognition: null,
       stream: null,
-      start: function() {
+      start: function(langCode) {
         var self = this;
         var SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRec) {
@@ -54,21 +54,23 @@
           return;
         }
 
+        var targetLang = langCode || 'en-IN';
+
         // Request browser microphone permission directly to trigger Chrome's Allow prompt
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
           navigator.mediaDevices.getUserMedia({ audio: true }).then(function(s) {
             self.stream = s;
-            self._startSpeech(SpeechRec);
+            self._startSpeech(SpeechRec, targetLang);
           }).catch(function(err) {
             console.warn("getUserMedia error:", err);
             // Still try starting speech directly
-            self._startSpeech(SpeechRec);
+            self._startSpeech(SpeechRec, targetLang);
           });
         } else {
-          self._startSpeech(SpeechRec);
+          self._startSpeech(SpeechRec, targetLang);
         }
       },
-      _startSpeech: function(SpeechRec) {
+      _startSpeech: function(SpeechRec, targetLang) {
         try {
           if (this.recognition) {
             try { this.recognition.abort(); } catch(e){}
@@ -78,7 +80,7 @@
           rec.continuous = false;
           rec.interimResults = true;
           rec.maxAlternatives = 3;
-          rec.lang = 'en-IN';
+          rec.lang = targetLang || 'en-IN';
 
           rec.onstart = function() {
             window.dispatchEvent(new CustomEvent('voice_status', { 

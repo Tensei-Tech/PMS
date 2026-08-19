@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../services/audit_service.dart';
@@ -27,14 +28,31 @@ class _TwoFactorAuthViewState extends State<TwoFactorAuthView> {
   bool _isVerifying = false;
   String? _currentVerificationId;
 
+  // TOTP 30-second countdown timer
+  Timer? _totpTimer;
+  int _secondsRemaining = 30;
+
   @override
   void initState() {
     super.initState();
     _currentVerificationId = widget.verificationId;
+    _startTotpTimer();
+  }
+
+  void _startTotpTimer() {
+    _totpTimer?.cancel();
+    _secondsRemaining = 30 - (DateTime.now().second % 30);
+    _totpTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
+      setState(() {
+        _secondsRemaining = 30 - (DateTime.now().second % 30);
+      });
+    });
   }
 
   @override
   void dispose() {
+    _totpTimer?.cancel();
     _otpController.dispose();
     super.dispose();
   }
@@ -110,19 +128,21 @@ class _TwoFactorAuthViewState extends State<TwoFactorAuthView> {
         ? '${widget.phone.substring(0, 3)}******${widget.phone.substring(widget.phone.length - 3)}'
         : widget.phone;
 
+    final progress = _secondsRemaining / 30.0;
+
     return Scaffold(
       backgroundColor: theme.colorScheme.surfaceContainerLow,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Card(
-            elevation: 4,
+            elevation: 2,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
               side: BorderSide(color: theme.colorScheme.outlineVariant),
             ),
             child: Container(
-              width: 440,
+              width: 460,
               padding: const EdgeInsets.all(32.0),
               child: Form(
                 key: _formKey,
@@ -143,7 +163,7 @@ class _TwoFactorAuthViewState extends State<TwoFactorAuthView> {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      'Two-Factor Authentication (2FA)',
+                      'Super Admin TOTP Authentication',
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -151,39 +171,78 @@ class _TwoFactorAuthViewState extends State<TwoFactorAuthView> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Security verification code sent to $maskedPhone & ${widget.email}',
+                      'Enter the 6-digit dynamic TOTP authenticator code or SMS code sent to $maskedPhone',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.outline,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 24),
-                    // Dev Mode Helper Chip
+                    const SizedBox(height: 20),
+
+                    // TOTP Live 30s Countdown Timer Widget
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.blue.shade200),
+                        color: theme.colorScheme.surfaceContainerHighest.withAlpha(80),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: theme.colorScheme.outlineVariant),
                       ),
                       child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(Icons.info_outline, size: 18, color: Colors.blue.shade800),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Dev Mode: Auto-filled test OTP is 123456',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue.shade900,
+                          Row(
+                            children: [
+                              SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  value: progress,
+                                  strokeWidth: 3,
+                                  backgroundColor: theme.colorScheme.outlineVariant,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    _secondsRemaining < 8 ? Colors.redAccent : theme.colorScheme.primary,
+                                  ),
+                                ),
                               ),
-                            ),
+                              const SizedBox(width: 12),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'TOTP Token Valid for: $_secondsRemaining s',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                      color: _secondsRemaining < 8 ? Colors.red.shade800 : theme.colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Refreshes dynamically every 30 seconds',
+                                    style: TextStyle(fontSize: 11, color: theme.colorScheme.outline),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.refresh, size: 20),
+                            tooltip: 'Resend / Refresh Code',
+                            onPressed: () {
+                              _startTotpTimer();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('TOTP timer synchronized.'),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            },
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
+
+                    // OTP Input Field
                     TextFormField(
                       controller: _otpController,
                       keyboardType: TextInputType.number,
@@ -195,7 +254,7 @@ class _TwoFactorAuthViewState extends State<TwoFactorAuthView> {
                         fontWeight: FontWeight.bold,
                       ),
                       decoration: InputDecoration(
-                        labelText: 'Enter 6-Digit OTP',
+                        labelText: 'Enter 6-Digit Code',
                         hintText: '123456',
                         counterText: '',
                         prefixIcon: const Icon(Icons.lock_clock_outlined),
@@ -205,12 +264,14 @@ class _TwoFactorAuthViewState extends State<TwoFactorAuthView> {
                       ),
                       validator: (value) {
                         if (value == null || value.trim().length != 6) {
-                          return 'Please enter a valid 6-digit OTP';
+                          return 'Please enter a valid 6-digit code';
                         }
                         return null;
                       },
                     ),
                     const SizedBox(height: 24),
+
+                    // Verify Button
                     SizedBox(
                       width: double.infinity,
                       height: 48,

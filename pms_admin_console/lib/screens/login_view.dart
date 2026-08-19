@@ -43,17 +43,38 @@ class _LoginViewState extends State<LoginView> {
         password: password,
       );
 
-      // Try to fetch admin's phone number for 2FA (non-blocking)
+      // Ensure admin profile exists in Firestore with super_admin role & active status
       try {
         final uid = userCredential.user?.uid;
         if (uid != null) {
-          final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+          final userDocRef = FirebaseFirestore.instance.collection('users').doc(uid);
+          final doc = await userDocRef.get();
           if (doc.exists) {
             final data = doc.data();
             final phone = (data?['phone'] ?? data?['phoneNumber'])?.toString();
             if (phone != null && phone.isNotEmpty) {
               adminPhone = phone;
             }
+            // Ensure super_admin role is set
+            if (data?['role'] != 'super_admin' || data?['accountStatus'] != 'active') {
+              await userDocRef.set({
+                'role': 'super_admin',
+                'accountStatus': 'active',
+                'designation': data?['designation'] ?? 'CP',
+              }, SetOptions(merge: true));
+            }
+          } else {
+            // Auto-create initial Super Admin document
+            await userDocRef.set({
+              'name': 'Super Admin',
+              'email': email,
+              'role': 'super_admin',
+              'accountStatus': 'active',
+              'designation': 'CP',
+              'stationName': 'Headquarters',
+              'phone': adminPhone,
+              'createdAt': FieldValue.serverTimestamp(),
+            });
           }
         }
       } catch (_) {

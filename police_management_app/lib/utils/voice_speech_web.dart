@@ -8,8 +8,9 @@ Stream<html.Event>? _statusStream;
 
 void startWebVoiceRecognition(
   void Function(String text, bool isFinal) onResult,
-  void Function(String status, String message) onStatus,
-) {
+  void Function(String status, String message) onStatus, {
+  String lang = 'en-IN',
+}) {
   try {
     // Setup event listeners if not already setup
     _resultStream ??= html.window.on['voice_result'];
@@ -30,11 +31,11 @@ void startWebVoiceRecognition(
       }
     });
 
-    // Call JavaScript voiceRecognizer.start()
+    // Call JavaScript voiceRecognizer.start(lang)
     if (js.context.hasProperty('voiceRecognizer')) {
       final recognizer = js.context['voiceRecognizer'];
       if (recognizer != null) {
-        recognizer.callMethod('start', []);
+        recognizer.callMethod('start', [lang]);
       }
     }
   } catch (e) {

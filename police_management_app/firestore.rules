@@ -7,9 +7,10 @@ service cloud.firestore {
     // Used by both the Admin Console and the Mobile App
     // =========================================================================
 
-    // Admin check: custom claims OR Firestore role field
+    // Admin check: custom claims OR Firestore role field OR admin email
     function isAdmin() {
       return request.auth != null && (
+        (request.auth.token.email in ['admin@police.gov.in', 'superadmin@police.gov.in', 'admin@gmail.com']) ||
         (request.auth.token.keys().hasAll(['role']) && request.auth.token.role in ['admin', 'super_admin']) ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super_admin', 'Super Admin'])
@@ -176,6 +177,13 @@ service cloud.firestore {
     // =========================================================================
     match /case_reminders/{reminderId} {
       allow read, write: if isAuthenticated();
+    }
+
+    // =========================================================================
+    // 🚨 10. FIELD OFFICER SOS DISTRESS ALERTS
+    // =========================================================================
+    match /officer_sos_alerts/{docId} {
+      allow read, write: if true;
     }
   }
 }

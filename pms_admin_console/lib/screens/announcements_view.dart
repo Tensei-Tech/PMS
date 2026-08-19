@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../utils/app_constants.dart';
 
 class AnnouncementsView extends StatefulWidget {
   const AnnouncementsView({super.key});
@@ -80,6 +81,12 @@ class _AnnouncementsViewState extends State<AnnouncementsView> {
     String selectedTag = data?['tag'] ?? 'New Law';
     String selectedIconName = data?['iconName'] ?? 'gavel';
     int selectedColor = (data?['iconColorHex'] as num?)?.toInt() ?? 0xFF1A237E;
+    String targetScope = data?['targetAudience'] ?? 'All Users (All India)';
+    String? targetState = data?['targetState'] ?? 'Maharashtra';
+    String? targetDistrict = data?['targetDistrict'];
+    String? targetStation = data?['targetStation'];
+    final officerIdCtrl = TextEditingController(text: data?['targetOfficerId'] ?? '');
+    bool isRedAlert = data?['isRedAlert'] == true;
     bool isSaving = false;
 
     showDialog(
@@ -88,11 +95,15 @@ class _AnnouncementsViewState extends State<AnnouncementsView> {
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) {
           final selectedIconData = _iconFromName(selectedIconName);
+          final allDistricts = AppConstants.getDistrictsForUnitType(null);
+          final availableStations = targetDistrict != null
+              ? AppConstants.getStationsForDistrict(targetDistrict)
+              : const <String>[];
 
           return Dialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
+              constraints: const BoxConstraints(maxWidth: 680),
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: SingleChildScrollView(
@@ -105,7 +116,7 @@ class _AnnouncementsViewState extends State<AnnouncementsView> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            isEditing ? 'Edit Carousel Announcement' : 'Add New Carousel Announcement',
+                            isEditing ? 'Edit Broadcast Announcement' : 'Create Broadcast / Push Notification',
                             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -120,7 +131,7 @@ class _AnnouncementsViewState extends State<AnnouncementsView> {
 
                       // Live Mobile Preview Box
                       Text(
-                        'Live Mobile App Preview',
+                        'Live Broadcast Preview',
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(
                               color: Theme.of(context).colorScheme.primary,
                               fontWeight: FontWeight.bold,
@@ -132,17 +143,21 @@ class _AnnouncementsViewState extends State<AnnouncementsView> {
                         padding: const EdgeInsets.all(18),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [
-                              Color(selectedColor),
-                              Color(selectedColor).withValues(alpha: 0.85),
-                            ],
+                            colors: isRedAlert
+                                ? [const Color(0xFFB71C1C), const Color(0xFFD32F2F)]
+                                : [
+                                    Color(selectedColor),
+                                    Color(selectedColor).withValues(alpha: 0.85),
+                                  ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Color(selectedColor).withValues(alpha: 0.3),
+                              color: isRedAlert
+                                  ? Colors.red.withValues(alpha: 0.4)
+                                  : Color(selectedColor).withValues(alpha: 0.3),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -158,7 +173,7 @@ class _AnnouncementsViewState extends State<AnnouncementsView> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Icon(
-                                selectedIconData,
+                                isRedAlert ? Icons.emergency : selectedIconData,
                                 color: Colors.white,
                                 size: 26,
                               ),
@@ -168,25 +183,37 @@ class _AnnouncementsViewState extends State<AnnouncementsView> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.25),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Text(
-                                      selectedTag,
-                                      style: const TextStyle(
-                                        fontSize: 10.5,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withValues(alpha: 0.25),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          isRedAlert ? 'EMERGENCY RED ALERT' : selectedTag,
+                                          style: const TextStyle(
+                                            fontSize: 10.5,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
                                       ),
-                                    ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'Target: $targetScope',
+                                        style: TextStyle(
+                                          fontSize: 10.5,
+                                          color: Colors.white.withValues(alpha: 0.8),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
                                     titleCtrl.text.trim().isEmpty
-                                        ? 'Announcement Title Here'
+                                        ? 'Announcement Title will appear here...'
                                         : titleCtrl.text.trim(),
                                     style: const TextStyle(
                                       fontSize: 14.5,
@@ -216,6 +243,131 @@ class _AnnouncementsViewState extends State<AnnouncementsView> {
                       ),
                       const SizedBox(height: 20),
 
+                      // Red Alert Urgent Switch
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isRedAlert ? Colors.red.shade50 : Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: isRedAlert ? Colors.red.shade300 : Colors.grey.shade300,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.emergency_outlined,
+                                  color: isRedAlert ? Colors.red : Colors.grey,
+                                ),
+                                const SizedBox(width: 10),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Red Alert / Emergency Push Notification',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: isRedAlert ? Colors.red.shade900 : Colors.black87,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Forces high priority push notification banner on officer devices',
+                                      style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            Switch(
+                              value: isRedAlert,
+                              activeTrackColor: Colors.red,
+                              onChanged: (val) => setDialogState(() => isRedAlert = val),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Target Audience Hierarchy Selector
+                      const Text(
+                        'Target Audience Scope (Geographic Hierarchy)',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<String>(
+                        initialValue: targetScope,
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Notification Scope *',
+                          prefixIcon: Icon(Icons.hub_outlined, size: 20),
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                        items: const [
+                          DropdownMenuItem(value: 'All Users (All India)', child: Text('All India (All Officers)')),
+                          DropdownMenuItem(value: 'State', child: Text('State Level')),
+                          DropdownMenuItem(value: 'District', child: Text('District Level')),
+                          DropdownMenuItem(value: 'Police Station', child: Text('Specific Police Station')),
+                          DropdownMenuItem(value: 'Individual Officer', child: Text('Individual Officer')),
+                        ],
+                        onChanged: (val) {
+                          setDialogState(() {
+                            targetScope = val ?? 'All Users (All India)';
+                          });
+                        },
+                      ),
+                      if (targetScope == 'District' || targetScope == 'Police Station') ...[
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<String?>(
+                          initialValue: targetDistrict,
+                          isExpanded: true,
+                          decoration: const InputDecoration(
+                            labelText: 'Select District *',
+                            prefixIcon: Icon(Icons.location_on_outlined, size: 20),
+                            border: OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                          items: allDistricts.map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
+                          onChanged: (val) {
+                            setDialogState(() {
+                              targetDistrict = val;
+                              targetStation = null;
+                            });
+                          },
+                        ),
+                      ],
+                      if (targetScope == 'Police Station') ...[
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<String?>(
+                          initialValue: targetStation,
+                          isExpanded: true,
+                          decoration: const InputDecoration(
+                            labelText: 'Select Police Station *',
+                            prefixIcon: Icon(Icons.local_police_outlined, size: 20),
+                            border: OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                          items: availableStations.map((st) => DropdownMenuItem(value: st, child: Text(st))).toList(),
+                          onChanged: (val) => setDialogState(() => targetStation = val),
+                        ),
+                      ],
+                      if (targetScope == 'Individual Officer') ...[
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: officerIdCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'Officer Sevaarth ID / Badge No / User ID *',
+                            prefixIcon: Icon(Icons.person_search_outlined, size: 20),
+                            border: OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+
                       // Category Tag Chips
                       const Text(
                         'Category Tag',
@@ -243,7 +395,7 @@ class _AnnouncementsViewState extends State<AnnouncementsView> {
                         controller: titleCtrl,
                         onChanged: (_) => setDialogState(() {}),
                         decoration: const InputDecoration(
-                          labelText: 'Announcement Title *',
+                          labelText: 'Announcement / Broadcast Title *',
                           hintText: 'e.g. BNSS 2023 — New Criminal Procedure Code',
                           border: OutlineInputBorder(),
                         ),
@@ -367,7 +519,7 @@ class _AnnouncementsViewState extends State<AnnouncementsView> {
                                     child: CircularProgressIndicator(strokeWidth: 2),
                                   )
                                 : const Icon(Icons.cloud_upload_outlined),
-                            label: Text(isEditing ? 'Update Announcement' : 'Publish to App Carousel'),
+                            label: Text(isEditing ? 'Update Broadcast' : 'Publish & Send Broadcast'),
                             onPressed: isSaving
                                 ? null
                                 : () async {
@@ -388,6 +540,13 @@ class _AnnouncementsViewState extends State<AnnouncementsView> {
                                         'tag': selectedTag,
                                         'iconName': selectedIconName,
                                         'iconColorHex': selectedColor,
+                                        'targetAudience': targetScope,
+                                        'targetState': targetState,
+                                        'targetDistrict': targetDistrict,
+                                        'targetStation': targetStation,
+                                        'targetOfficerId': officerIdCtrl.text.trim(),
+                                        'isRedAlert': isRedAlert,
+                                        'priority': isRedAlert ? 'urgent' : 'normal',
                                         'updatedAt': FieldValue.serverTimestamp(),
                                       };
 
@@ -398,6 +557,7 @@ class _AnnouncementsViewState extends State<AnnouncementsView> {
                                             .set(payload, SetOptions(merge: true));
                                       } else {
                                         payload['order'] = DateTime.now().millisecondsSinceEpoch;
+                                        payload['createdAt'] = FieldValue.serverTimestamp();
                                         await _firestore
                                             .collection('app_announcements')
                                             .add(payload);
@@ -410,8 +570,8 @@ class _AnnouncementsViewState extends State<AnnouncementsView> {
                                             backgroundColor: Colors.green,
                                             content: Text(
                                               isEditing
-                                                  ? 'Announcement updated! App users will see this instantly.'
-                                                  : 'New announcement published live to app carousel!',
+                                                  ? 'Broadcast updated! Target audience will receive this update.'
+                                                  : 'Broadcast published live to $targetScope!',
                                             ),
                                           ),
                                         );

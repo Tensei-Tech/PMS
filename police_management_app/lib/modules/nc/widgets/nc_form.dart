@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../../../screens/ad_form_screen.dart' show ACT_DATA;
 import '../../../utils/app_constants.dart';
 import '../../../widgets/base_form/base_form.dart';
+import '../../../widgets/voice_dictation_button.dart';
 
 // ── Palette (matches common_form.dart) ───────────────────────────────────────
 const Color _kDark = Color(0xFF0f172a);
@@ -1187,8 +1188,20 @@ class NcFormState extends State<NcForm> {
   Widget _sFic() => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('First Information Content / हकीकत', style: _tsLabel),
+              VoiceDictationButton(
+                controller: _fic,
+                label: 'बोलून लिहा (Voice)',
+                onSpeechCompleted: () => _onFicChanged(_fic.text),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
           _tf(
-            'First Information Content',
+            '',
             _fic,
             maxLines: 5,
             onChanged: _onFicChanged,

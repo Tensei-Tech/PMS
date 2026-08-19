@@ -117,8 +117,10 @@ class AuthProvider extends ChangeNotifier {
   String get fullName => _fullName;
   String get email => _email;
   String get phone => _phone;
+  String get contactNumber => _phone;
   String get designation => _designation;
   String get badgeNumber => _badgeNumber;
+  String get sevaNumber => _badgeNumber.isNotEmpty ? _badgeNumber : _govtId;
   String get stationName => _overrideStationName ?? _stationName;
   /// Active station for queries and new records (may differ from [homeStationName] when switched).
   String get activeStation => stationName;
@@ -336,6 +338,16 @@ class AuthProvider extends ChangeNotifier {
   Future<void> _applyProfileAndBackfill(UserModel profile) async {
     _applyProfile(profile);
     await _backfillDistrictIfNeeded(profile);
+    try {
+      final userUid = profile.uid.isNotEmpty ? profile.uid : uid;
+      if (userUid.isNotEmpty) {
+        await FirebaseFirestore.instance.collection('users').doc(userUid).update({
+          'lastActiveAt': FieldValue.serverTimestamp(),
+          'lastActive': FieldValue.serverTimestamp(),
+          'lastLoginAt': FieldValue.serverTimestamp(),
+        });
+      }
+    } catch (_) {}
   }
 
   /// One-time district backfill from stationAddress for legacy profiles.

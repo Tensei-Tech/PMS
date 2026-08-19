@@ -1,4 +1,4 @@
-﻿// lib/screens/add_members_screen.dart
+// lib/screens/add_members_screen.dart
 // Assign floating (unassigned) officers to a station — PI/API or SP/CP.
 
 import 'package:flutter/material.dart';
@@ -315,10 +315,98 @@ class _AssignOfficerScreenState extends State<AssignOfficerScreen> {
     }
   }
 
+  String _selectedRankFilter = 'All';
+
+  static final List<UserModel> _dummyAvailableOfficers = [
+    UserModel(
+      uid: 'dummy_user_1',
+      name: 'API Rohit Deshmukh',
+      email: 'rohit.deshmukh@mahapolice.gov.in',
+      phone: '9822014589',
+      designation: 'API',
+      badgeNumber: 'MH-7821',
+      stationName: '',
+      stationAddress: 'Awaiting Station Posting',
+      stationLandline: '0712-2560100',
+      govtId: 'MH-POL-7821',
+      accountStatus: 'active',
+      role: 'officer',
+    ),
+    UserModel(
+      uid: 'dummy_user_2',
+      name: 'PSI Vikram Patil',
+      email: 'vikram.patil@mahapolice.gov.in',
+      phone: '9822031145',
+      designation: 'PSI',
+      badgeNumber: 'MH-4412',
+      stationName: '',
+      stationAddress: 'Awaiting Station Posting',
+      stationLandline: '0712-2560101',
+      govtId: 'MH-POL-4412',
+      accountStatus: 'active',
+      role: 'officer',
+    ),
+    UserModel(
+      uid: 'dummy_user_3',
+      name: 'ASI Anjali Kulkarni',
+      email: 'anjali.kulkarni@mahapolice.gov.in',
+      phone: '9822098451',
+      designation: 'ASI',
+      badgeNumber: 'MH-3382',
+      stationName: '',
+      stationAddress: 'Awaiting Station Posting',
+      stationLandline: '0712-2560102',
+      govtId: 'MH-POL-3382',
+      accountStatus: 'active',
+      role: 'officer',
+    ),
+    UserModel(
+      uid: 'dummy_user_4',
+      name: 'HC Sanjay Shinde',
+      email: 'sanjay.shinde@mahapolice.gov.in',
+      phone: '9822077612',
+      designation: 'HC',
+      badgeNumber: 'MH-9021',
+      stationName: '',
+      stationAddress: 'Awaiting Station Posting',
+      stationLandline: '0712-2560103',
+      govtId: 'MH-POL-9021',
+      accountStatus: 'active',
+      role: 'officer',
+    ),
+    UserModel(
+      uid: 'dummy_user_5',
+      name: 'PC Mahesh Pawar',
+      email: 'mahesh.pawar@mahapolice.gov.in',
+      phone: '9822045633',
+      designation: 'PC',
+      badgeNumber: 'MH-1109',
+      stationName: '',
+      stationAddress: 'Awaiting Station Posting',
+      stationLandline: '0712-2560104',
+      govtId: 'MH-POL-1109',
+      accountStatus: 'active',
+      role: 'officer',
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final canAssign = TransferRequestRoles.canAssignOfficers(auth.designation);
+
+    final filteredList = _dummyAvailableOfficers.where((u) {
+      if (_selectedRankFilter == 'All') return true;
+      if (_selectedRankFilter == 'Officers (API/PSI)') {
+        return u.designation == 'API' || u.designation == 'PSI';
+      }
+      if (_selectedRankFilter == 'Constabulary') {
+        return u.designation == 'ASI' ||
+            u.designation == 'HC' ||
+            u.designation == 'PC';
+      }
+      return true;
+    }).toList();
 
     return Scaffold(
       backgroundColor: AppColors.lightBg,
@@ -407,6 +495,98 @@ class _AssignOfficerScreenState extends State<AssignOfficerScreen> {
                       assigning: _assigning,
                       onAssign: () => _onAssign(_result!, auth),
                     ),
+                  ] else ...[
+                    const SizedBox(height: 24),
+                    // ── Header for Unassigned Roster ───────────────────────
+                    Row(
+                      children: [
+                        const Icon(Icons.badge_rounded,
+                            size: 20, color: AppColors.navyDark),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Available Officers for Posting',
+                          style: GoogleFonts.poppins(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.navyDark,
+                          ),
+                        ),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color:
+                                AppColors.successGreen.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${filteredList.length} Available',
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.successGreen,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // ── Rank Filter Chips ──────────────────────────────────
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          'All',
+                          'Officers (API/PSI)',
+                          'Constabulary',
+                        ].map((filter) {
+                          final isSelected = _selectedRankFilter == filter;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: ChoiceChip(
+                              label: Text(
+                                filter,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.w500,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : AppColors.navyDark,
+                                ),
+                              ),
+                              selected: isSelected,
+                              selectedColor: AppColors.navyMid,
+                              backgroundColor: Colors.white,
+                              side: BorderSide(
+                                color: isSelected
+                                    ? AppColors.navyMid
+                                    : AppColors.lightBorder,
+                              ),
+                              onSelected: (_) {
+                                setState(() => _selectedRankFilter = filter);
+                              },
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // ── Available Officers List ────────────────────────────
+                    ...filteredList.map((officer) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _UserResultCard(
+                          user: officer,
+                          assigning: _assigning,
+                          onAssign: () => _onAssign(officer, auth),
+                        ),
+                      );
+                    }),
                   ],
                 ],
               ),

@@ -340,6 +340,7 @@ class _OfficersDirectoryViewState extends State<OfficersDirectoryView> {
                 child: DropdownButtonFormField<String>(
                   key: ValueKey('desig_$_selectedDesignation'),
                   initialValue: _selectedDesignation,
+                  isExpanded: true,
                   decoration: InputDecoration(
                     labelText: 'Designation',
                     isDense: true,
@@ -372,6 +373,7 @@ class _OfficersDirectoryViewState extends State<OfficersDirectoryView> {
                 child: DropdownButtonFormField<String>(
                   key: ValueKey('dist_$_selectedDistrict'),
                   initialValue: _selectedDistrict,
+                  isExpanded: true,
                   decoration: InputDecoration(
                     labelText: 'District / City',
                     isDense: true,

@@ -12,6 +12,7 @@ class ApprovalsView extends StatefulWidget {
 class _ApprovalsViewState extends State<ApprovalsView> {
   final Set<String> _selectedUsers = {};
   bool _isProcessingBulk = false;
+  int _tabIndex = 0; // 0: Pending, 1: Rejected
 
   Future<void> _approveUser(BuildContext context, String docId, String name) async {
     try {
@@ -84,6 +85,7 @@ class _ApprovalsViewState extends State<ApprovalsView> {
             .update({
           'accountStatus': 'rejected',
           'status': 'rejected',
+          'rejectedAt': FieldValue.serverTimestamp(),
         });
 
         await AuditService.logAction(
@@ -207,27 +209,29 @@ class _ApprovalsViewState extends State<ApprovalsView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Header & Bulk Action
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Pending Officer Approvals',
+                        'Officer Registration Approvals',
                         style: theme.textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Chip(
-                        avatar: const Icon(Icons.pending_actions, size: 18, color: Colors.redAccent),
-                        label: const Text('Requires Attention'),
-                        backgroundColor: Colors.red.shade50,
-                        side: BorderSide(color: Colors.red.shade200),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Review, approve, or re-evaluate officer access requests in real-time',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.outline,
+                        ),
                       ),
                     ],
                   ),
-                  if (_selectedUsers.isNotEmpty)
+                  if (_tabIndex == 0 && _selectedUsers.isNotEmpty)
                     FilledButton.icon(
                       style: FilledButton.styleFrom(
                         backgroundColor: Colors.green.shade700,
@@ -248,31 +252,53 @@ class _ApprovalsViewState extends State<ApprovalsView> {
                     ),
                 ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Review and manage pending officer registration requests in real-time',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.outline,
-                ),
+              const SizedBox(height: 20),
+
+              // Segmented Tab for Pending vs Rejected
+              SegmentedButton<int>(
+                segments: const [
+                  ButtonSegment<int>(
+                    value: 0,
+                    label: Text('Pending Approvals'),
+                    icon: Icon(Icons.pending_actions_outlined, size: 18),
+                  ),
+                  ButtonSegment<int>(
+                    value: 1,
+                    label: Text('Rejected Registrations'),
+                    icon: Icon(Icons.person_off_outlined, size: 18),
+                  ),
+                ],
+                selected: {_tabIndex},
+                onSelectionChanged: (newSelection) {
+                  setState(() {
+                    _tabIndex = newSelection.first;
+                    _selectedUsers.clear();
+                  });
+                },
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
+
+              // Main List Stream
               Expanded(
                 child: StreamBuilder<QuerySnapshot>(
-                  stream: FirebaseFirestore.instance
-                      .collection('users')
-                      .where('accountStatus', whereIn: ['pending_approval', 'pending'])
-                      .snapshots(),
+                  stream: _tabIndex == 0
+                      ? FirebaseFirestore.instance
+                          .collection('users')
+                          .where('accountStatus', whereIn: ['pending_approval', 'pending'])
+                          .snapshots()
+                      : FirebaseFirestore.instance
+                          .collection('users')
+                          .where('accountStatus', isEqualTo: 'rejected')
+                          .snapshots(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                        child: CircularProgressIndicator(),
-                      );
+                      return const Center(child: CircularProgressIndicator());
                     }
 
                     if (snapshot.hasError) {
                       return Center(
                         child: Text(
-                          'Error loading pending approvals: ${snapshot.error}',
+                          'Error loading data: ${snapshot.error}',
                           style: TextStyle(color: theme.colorScheme.error),
                         ),
                       );
@@ -286,13 +312,13 @@ class _ApprovalsViewState extends State<ApprovalsView> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
-                              Icons.verified_outlined,
+                              _tabIndex == 0 ? Icons.verified_outlined : Icons.check_circle_outline,
                               size: 64,
                               color: theme.colorScheme.primary.withAlpha(150),
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'No pending approvals 🎉',
+                              _tabIndex == 0 ? 'No pending approvals 🎉' : 'No rejected registrations',
                               style: theme.textTheme.headlineSmall?.copyWith(
                                 fontWeight: FontWeight.w600,
                                 color: theme.colorScheme.onSurfaceVariant,
@@ -300,7 +326,9 @@ class _ApprovalsViewState extends State<ApprovalsView> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'All officer registration requests have been processed.',
+                              _tabIndex == 0
+                                  ? 'All officer registration requests have been processed.'
+                                  : 'No officer accounts have been rejected in the system.',
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: theme.colorScheme.outline,
                               ),
@@ -313,7 +341,7 @@ class _ApprovalsViewState extends State<ApprovalsView> {
                     final allDocIds = docs.map((d) => d.id).toSet();
 
                     return Card(
-                      elevation: 1,
+                      elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                         side: BorderSide(color: theme.colorScheme.outlineVariant),
@@ -324,54 +352,38 @@ class _ApprovalsViewState extends State<ApprovalsView> {
                         child: SingleChildScrollView(
                           child: DataTable(
                             headingRowColor: WidgetStateProperty.all(
-                              theme.colorScheme.surfaceContainerHigh,
+                              theme.colorScheme.surfaceContainerHighest.withAlpha(80),
                             ),
-                            showCheckboxColumn: true,
-                            onSelectAll: (selected) {
-                              setState(() {
-                                if (selected == true) {
-                                  _selectedUsers.addAll(allDocIds);
-                                } else {
-                                  _selectedUsers.removeAll(allDocIds);
-                                }
-                              });
-                            },
-                            columns: const [
-                              DataColumn(
-                                label: Text(
-                                  'Name',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
+                            showCheckboxColumn: _tabIndex == 0,
+                            onSelectAll: _tabIndex == 0
+                                ? (selected) {
+                                    setState(() {
+                                      if (selected == true) {
+                                        _selectedUsers.addAll(allDocIds);
+                                      } else {
+                                        _selectedUsers.removeAll(allDocIds);
+                                      }
+                                    });
+                                  }
+                                : null,
+                            columns: [
+                              const DataColumn(
+                                label: Text('Name', style: TextStyle(fontWeight: FontWeight.bold)),
+                              ),
+                              const DataColumn(
+                                label: Text('Badge / Govt ID', style: TextStyle(fontWeight: FontWeight.bold)),
+                              ),
+                              const DataColumn(
+                                label: Text('Designation / Rank', style: TextStyle(fontWeight: FontWeight.bold)),
+                              ),
+                              const DataColumn(
+                                label: Text('Station', style: TextStyle(fontWeight: FontWeight.bold)),
                               ),
                               DataColumn(
-                                label: Text(
-                                  'Badge / Govt ID',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
+                                label: Text(_tabIndex == 0 ? 'Applied Date' : 'Rejected Date', style: const TextStyle(fontWeight: FontWeight.bold)),
                               ),
-                              DataColumn(
-                                label: Text(
-                                  'Designation / Rank',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              DataColumn(
-                                label: Text(
-                                  'Station',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              DataColumn(
-                                label: Text(
-                                  'Applied Date',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              DataColumn(
-                                label: Text(
-                                  'Actions',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
+                              const DataColumn(
+                                label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold)),
                               ),
                             ],
                             rows: docs.map((doc) {
@@ -388,30 +400,38 @@ class _ApprovalsViewState extends State<ApprovalsView> {
 
                               final designation = (data['designation'] ?? data['rank'] ?? 'N/A').toString();
                               final station = (data['stationName'] ?? data['station'] ?? data['assignedStation'] ?? 'Unassigned').toString();
-                              final appliedDate = _formatDate(data['createdAt'] ?? data['appliedDate'] ?? data['timestamp']);
+                              final dateStr = _tabIndex == 0
+                                  ? _formatDate(data['createdAt'] ?? data['appliedDate'] ?? data['timestamp'])
+                                  : _formatDate(data['rejectedAt'] ?? data['updatedAt'] ?? data['createdAt']);
 
                               return DataRow(
                                 selected: isSelected,
-                                onSelectChanged: (selected) {
-                                  setState(() {
-                                    if (selected == true) {
-                                      _selectedUsers.add(docId);
-                                    } else {
-                                      _selectedUsers.remove(docId);
-                                    }
-                                  });
-                                },
+                                onSelectChanged: _tabIndex == 0
+                                    ? (selected) {
+                                        setState(() {
+                                          if (selected == true) {
+                                            _selectedUsers.add(docId);
+                                          } else {
+                                            _selectedUsers.remove(docId);
+                                          }
+                                        });
+                                      }
+                                    : null,
                                 cells: [
                                   DataCell(
                                     Row(
                                       children: [
                                         CircleAvatar(
                                           radius: 16,
-                                          backgroundColor: theme.colorScheme.primaryContainer,
+                                          backgroundColor: _tabIndex == 0
+                                              ? theme.colorScheme.primaryContainer
+                                              : Colors.red.shade100,
                                           child: Text(
                                             name.isNotEmpty ? name[0].toUpperCase() : '?',
                                             style: TextStyle(
-                                              color: theme.colorScheme.onPrimaryContainer,
+                                              color: _tabIndex == 0
+                                                  ? theme.colorScheme.onPrimaryContainer
+                                                  : Colors.red.shade900,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
@@ -433,23 +453,29 @@ class _ApprovalsViewState extends State<ApprovalsView> {
                                     ),
                                   ),
                                   DataCell(Text(station)),
-                                  DataCell(Text(appliedDate)),
+                                  DataCell(Text(dateStr)),
                                   DataCell(
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        IconButton(
-                                          icon: const Icon(Icons.check_circle_outline, color: Colors.green),
-                                          tooltip: 'Approve',
-                                          onPressed: () => _approveUser(context, docId, name),
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.cancel_outlined, color: Colors.red),
-                                          tooltip: 'Reject',
-                                          onPressed: () => _rejectUser(context, docId, name),
-                                        ),
-                                      ],
-                                    ),
+                                    _tabIndex == 0
+                                        ? Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              IconButton(
+                                                icon: const Icon(Icons.check_circle_outline, color: Colors.green),
+                                                tooltip: 'Approve',
+                                                onPressed: () => _approveUser(context, docId, name),
+                                              ),
+                                              IconButton(
+                                                icon: const Icon(Icons.cancel_outlined, color: Colors.red),
+                                                tooltip: 'Reject',
+                                                onPressed: () => _rejectUser(context, docId, name),
+                                              ),
+                                            ],
+                                          )
+                                        : FilledButton.tonalIcon(
+                                            icon: const Icon(Icons.refresh, size: 16),
+                                            label: const Text('Re-Approve'),
+                                            onPressed: () => _approveUser(context, docId, name),
+                                          ),
                                   ),
                                 ],
                               );

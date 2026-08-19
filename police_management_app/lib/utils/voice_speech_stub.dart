@@ -2,7 +2,8 @@
 
 void startWebVoiceRecognition(
   void Function(String text, bool isFinal) onResult,
-  void Function(String status, String message) onStatus,
-) {}
+  void Function(String status, String message) onStatus, {
+  String lang = 'en-IN',
+}) {}
 
 void stopWebVoiceRecognition() {}
