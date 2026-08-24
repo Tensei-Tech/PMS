@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../services/audit_service.dart';
+import 'main_dashboard.dart';
 import 'two_factor_auth_view.dart';
 
 class LoginView extends StatefulWidget {
@@ -43,36 +44,40 @@ class _LoginViewState extends State<LoginView> {
         password: password,
       );
 
+      bool is2FAEnabled = true;
+
       // Ensure admin profile exists in Firestore with super_admin role & active status
       try {
         final uid = userCredential.user?.uid;
         if (uid != null) {
           final userDocRef = FirebaseFirestore.instance.collection('users').doc(uid);
-          final doc = await userDocRef.get();
+          final doc = await userDocRef.get().timeout(const Duration(seconds: 3));
           if (doc.exists) {
             final data = doc.data();
+            if (data?['twoFactorAuthEnabled'] != null) {
+              is2FAEnabled = data!['twoFactorAuthEnabled'] == true;
+            }
             final phone = (data?['phone'] ?? data?['phoneNumber'])?.toString();
             if (phone != null && phone.isNotEmpty) {
               adminPhone = phone;
             }
-            // Ensure super_admin role is set
+            // Ensure super_admin role is set in background
             if (data?['role'] != 'super_admin' || data?['accountStatus'] != 'active') {
-              await userDocRef.set({
+              userDocRef.set({
                 'role': 'super_admin',
                 'accountStatus': 'active',
                 'designation': data?['designation'] ?? 'CP',
               }, SetOptions(merge: true));
             }
           } else {
-            // Auto-create initial Super Admin document
-            await userDocRef.set({
-              'name': 'Super Admin',
+            // Auto-create initial Master Admin document in background
+            userDocRef.set({
+              'name': 'Master Admin',
               'email': email,
               'role': 'super_admin',
               'accountStatus': 'active',
-              'designation': 'CP',
-              'stationName': 'Headquarters',
               'phone': adminPhone,
+              'twoFactorAuthEnabled': true,
               'createdAt': FieldValue.serverTimestamp(),
             });
           }
@@ -81,7 +86,25 @@ class _LoginViewState extends State<LoginView> {
         // Phone lookup is optional — use default phone for 2FA
       }
 
-      await AuditService.logAction(
+      if (!is2FAEnabled) {
+        // Admin disabled 2FA in Settings -> Directly grant access!
+        AuditService.logAction(
+          action: 'PRIMARY_AUTH_SUCCESS_DIRECT',
+          targetUserId: userCredential.user?.uid ?? 'super_admin',
+          details: 'Direct login authenticated without 2FA step (2FA disabled by admin setting) for $email',
+        );
+
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const MainDashboard()),
+          (route) => false,
+        );
+        return;
+      }
+
+      AuditService.logAction(
         action: 'PRIMARY_AUTH_SUCCESS',
         targetUserId: 'admin',
         details: 'Email/Password verified for $email. Initiating 2FA OTP step.',
@@ -89,20 +112,36 @@ class _LoginViewState extends State<LoginView> {
 
       if (!mounted) return;
 
+      // Start phone verification with fast fallback to avoid blocking login UI
+      bool navigated = false;
+      void navigateOnce(String? vId, int? token) {
+        if (!navigated) {
+          navigated = true;
+          _navigateTo2FA(email, adminPhone, vId, token);
+        }
+      }
+
       try {
-        await FirebaseAuth.instance.verifyPhoneNumber(
+        FirebaseAuth.instance.verifyPhoneNumber(
           phoneNumber: adminPhone,
           verificationCompleted: (PhoneAuthCredential credential) {},
           verificationFailed: (FirebaseAuthException e) {
-            _navigateTo2FA(email, adminPhone, null, null);
+            navigateOnce(null, null);
           },
           codeSent: (String verificationId, int? resendToken) {
-            _navigateTo2FA(email, adminPhone, verificationId, resendToken);
+            navigateOnce(verificationId, resendToken);
           },
-          codeAutoRetrievalTimeout: (String verificationId) {},
+          codeAutoRetrievalTimeout: (String verificationId) {
+            navigateOnce(verificationId, null);
+          },
         );
+
+        // Fallback timer: if reCAPTCHA or SMS network takes more than 2.5s, proceed to 2FA view
+        Future.delayed(const Duration(milliseconds: 2500), () {
+          navigateOnce(null, null);
+        });
       } catch (_) {
-        _navigateTo2FA(email, adminPhone, null, null);
+        navigateOnce(null, null);
       }
     } catch (e) {
       if (!mounted) return;
@@ -174,7 +213,7 @@ class _LoginViewState extends State<LoginView> {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      'Super Admin Portal',
+                      'Master Admin Portal',
                       style: theme.textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),

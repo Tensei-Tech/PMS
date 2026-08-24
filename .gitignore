@@ -79,3 +79,8 @@ build/
 android/app/build/
 android/build/
 *.iml
+
+# Flutter generated files
+**/build/
+.dart_tool/
+

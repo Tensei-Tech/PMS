@@ -689,4 +689,44 @@ class AppConstants {
       '$district Town PS',
     ];
   }
+
+  /// Checks whether a user record belongs to an administrative account rather than an operational police officer.
+  static bool isAdminUser(Map<String, dynamic> data) {
+    final role = (data['role'] ?? '').toString().trim().toLowerCase();
+    final email = (data['email'] ?? '').toString().trim().toLowerCase();
+    final name = (data['name'] ?? data['fullName'] ?? '').toString().trim().toLowerCase();
+
+    return role == 'admin' ||
+        role == 'super_admin' ||
+        role == 'superadmin' ||
+        role == 'master_admin' ||
+        role == 'super admin' ||
+        role == 'master admin' ||
+        data['isSuperAdmin'] == true ||
+        email == 'admin@police.gov.in' ||
+        email == 'superadmin@police.gov.in' ||
+        email.startsWith('admin@') ||
+        name == 'master admin';
+  }
+
+  /// Checks whether a user document represents a pending officer registration request (excluding admin accounts).
+  static bool isPendingApproval(Map<String, dynamic> data) {
+    if (isAdminUser(data)) return false;
+    final status = (data['accountStatus'] ?? data['status'] ?? 'pending').toString().toLowerCase();
+    return status == 'pending_approval' || status == 'pending';
+  }
+
+  /// Checks whether a user document represents an approved active officer (excluding admin accounts).
+  static bool isApprovedOfficer(Map<String, dynamic> data) {
+    if (isAdminUser(data)) return false;
+    final status = (data['accountStatus'] ?? data['status'] ?? 'active').toString().toLowerCase();
+    return status == 'active' || status == 'approved';
+  }
+
+  /// Checks whether a user document represents a rejected registration request (excluding admin accounts).
+  static bool isRejectedOfficer(Map<String, dynamic> data) {
+    if (isAdminUser(data)) return false;
+    final status = (data['accountStatus'] ?? data['status'] ?? '').toString().toLowerCase();
+    return status == 'rejected';
+  }
 }

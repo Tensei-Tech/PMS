@@ -7,6 +7,8 @@ class AccountAccess {
   final bool allowed;
   final String? blockMessage;
 
+  static const archivedMessage =
+      'Your account has been archived by the admin. Contact your Master Admin for access.';
   static const pendingApprovalMessage =
       'Your account is still pending admin approval.';
   static const rejectedMessage =
@@ -18,16 +20,16 @@ class AccountAccess {
     final accountStatus = profile.accountStatus.trim().toLowerCase();
     final status = profile.status.trim().toLowerCase();
 
-    if (accountStatus == UserAccountStatus.archived) {
+    if (accountStatus == UserAccountStatus.archived || accountStatus == 'archived') {
       return const AccountAccess._(
         allowed: false,
-        blockMessage: deactivatedMessage,
+        blockMessage: archivedMessage,
       );
     }
     if (status == 'inactive') {
       return const AccountAccess._(
         allowed: false,
-        blockMessage: deactivatedMessage,
+        blockMessage: archivedMessage,
       );
     }
     if (accountStatus == UserAccountStatus.rejected || status == 'rejected') {

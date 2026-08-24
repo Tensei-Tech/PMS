@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../services/audit_service.dart';
+import '../utils/app_constants.dart';
 
 class ApprovalsView extends StatefulWidget {
   const ApprovalsView({super.key});
@@ -281,15 +282,9 @@ class _ApprovalsViewState extends State<ApprovalsView> {
               // Main List Stream
               Expanded(
                 child: StreamBuilder<QuerySnapshot>(
-                  stream: _tabIndex == 0
-                      ? FirebaseFirestore.instance
-                          .collection('users')
-                          .where('accountStatus', whereIn: ['pending_approval', 'pending'])
-                          .snapshots()
-                      : FirebaseFirestore.instance
-                          .collection('users')
-                          .where('accountStatus', isEqualTo: 'rejected')
-                          .snapshots(),
+                  stream: FirebaseFirestore.instance
+                      .collection('users')
+                      .snapshots(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
@@ -304,7 +299,13 @@ class _ApprovalsViewState extends State<ApprovalsView> {
                       );
                     }
 
-                    final docs = snapshot.data?.docs ?? [];
+                    final allDocs = snapshot.data?.docs ?? [];
+                    final docs = allDocs.where((doc) {
+                      final data = doc.data() as Map<String, dynamic>;
+                      return _tabIndex == 0
+                          ? AppConstants.isPendingApproval(data)
+                          : AppConstants.isRejectedOfficer(data);
+                    }).toList();
 
                     if (docs.isEmpty) {
                       return Center(

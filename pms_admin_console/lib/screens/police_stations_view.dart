@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../utils/app_constants.dart';
+import '../utils/case_utils.dart';
 
 class PoliceStationsView extends StatefulWidget {
   const PoliceStationsView({super.key});
@@ -107,8 +108,7 @@ class _PoliceStationsViewState extends State<PoliceStationsView> {
                         );
                       }
                       stationsMap[station]!.totalCases++;
-                      final status = data['status']?.toString().toLowerCase() ?? '';
-                      if (status == 'disposed' || status == 'completed' || status == 'closed' || data['chargesheetNumber'] != null) {
+                      if (CaseUtils.isDisposed(data)) {
                         stationsMap[station]!.disposedCases++;
                       } else {
                         stationsMap[station]!.activeCases++;
@@ -798,6 +798,7 @@ class _StationDetailViewState extends State<_StationDetailView> {
 
                   final stationOfficers = userDocs.where((doc) {
                     final data = doc.data() as Map<String, dynamic>;
+                    if (AppConstants.isAdminUser(data)) return false;
                     final st = (data['stationName'] ?? data['station'] ?? data['assignedStation'])?.toString().trim();
                     return st?.toLowerCase() == widget.stationName.toLowerCase();
                   }).toList();
@@ -812,20 +813,7 @@ class _StationDetailViewState extends State<_StationDetailView> {
                   int disposedCasesCount = 0;
                   for (final doc in stationCases) {
                     final data = doc.data() as Map<String, dynamic>;
-                    final status = (data['status'] ?? '').toString().toLowerCase();
-                    final court = data['court'] is Map<String, dynamic> ? data['court'] as Map<String, dynamic> : null;
-                    final isDisposed = status == 'disposed' ||
-                        status == 'completed' ||
-                        status == 'chargesheet filed' ||
-                        status == 'chargesheeted' ||
-                        status == 'closed' ||
-                        data['chargesheetNumber'] != null ||
-                        data['chargeSheetNumber'] != null ||
-                        data['chargeSheeted'] != null ||
-                        data['isDisposed'] == true ||
-                        (court != null && court['chargeSheetNumber'] != null);
-
-                    if (isDisposed) {
+                    if (CaseUtils.isDisposed(data)) {
                       disposedCasesCount++;
                     } else {
                       pendingCasesCount++;
@@ -836,18 +824,7 @@ class _StationDetailViewState extends State<_StationDetailView> {
                   final displayedCases = stationCases.where((doc) {
                     if (_caseStatusFilter == null) return true;
                     final data = doc.data() as Map<String, dynamic>;
-                    final status = (data['status'] ?? '').toString().toLowerCase();
-                    final court = data['court'] is Map<String, dynamic> ? data['court'] as Map<String, dynamic> : null;
-                    final isDisposed = status == 'disposed' ||
-                        status == 'completed' ||
-                        status == 'chargesheet filed' ||
-                        status == 'chargesheeted' ||
-                        status == 'closed' ||
-                        data['chargesheetNumber'] != null ||
-                        data['chargeSheetNumber'] != null ||
-                        data['chargeSheeted'] != null ||
-                        data['isDisposed'] == true ||
-                        (court != null && court['chargeSheetNumber'] != null);
+                    final isDisposed = CaseUtils.isDisposed(data);
 
                     if (_caseStatusFilter == 'Pending') {
                       return !isDisposed;
@@ -1263,23 +1240,10 @@ class _StationDetailViewState extends State<_StationDetailView> {
                                           final caseNo = (data['caseNumber'] ?? data['crimeNumber'] ?? data['firNumber'] ?? doc.id).toString();
                                           final title = (data['title'] ?? data['sections'] ?? data['caseTitle'] ?? 'General Case Record').toString();
                                           final io = (data['ioName'] ?? data['assignedOfficer'] ?? data['officerName'] ?? '—').toString();
+                                          final isDisposed = CaseUtils.isDisposed(data);
 
-                                          final statusRaw = (data['status'] ?? '').toString();
-                                          final statusLower = statusRaw.toLowerCase();
-                                          final court = data['court'] is Map<String, dynamic> ? data['court'] as Map<String, dynamic> : null;
-                                          final isDisposed = statusLower == 'disposed' ||
-                                              statusLower == 'completed' ||
-                                              statusLower == 'closed' ||
-                                              statusLower == 'chargesheet filed' ||
-                                              statusLower == 'chargesheeted' ||
-                                              data['chargesheetNumber'] != null ||
-                                              data['chargeSheetNumber'] != null ||
-                                              data['chargeSheeted'] != null ||
-                                              data['isDisposed'] == true ||
-                                              (court != null && court['chargeSheetNumber'] != null);
-
-                                          // 🏷️ Rename "Open" to "Pending"
-                                          final displayBadgeText = isDisposed ? 'Disposed' : 'Pending';
+                                          // 🏷️ Status Badge
+                                          final displayBadgeText = CaseUtils.getStatusLabel(data);
                                           final badgeColor = isDisposed ? const Color(0xFF059669) : const Color(0xFFD97706);
                                           final badgeBg = isDisposed ? const Color(0xFFECFDF5) : const Color(0xFFFEF3C7);
                                           final badgeBorder = isDisposed ? const Color(0xFFA7F3D0) : const Color(0xFFFDE68A);

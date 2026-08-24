@@ -1,14 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'announcements_view.dart';
-import 'approvals_view.dart';
 import 'audit_logs_view.dart';
 import 'cases_view.dart';
 import 'dashboard_view.dart';
 import 'feedback_view.dart';
+import 'notifications_view.dart';
 import 'police_stations_view.dart';
 import 'officers_directory_view.dart';
 import 'settings_view.dart';
+import '../services/app_settings_service.dart';
+import '../utils/app_constants.dart';
 
 // 🎨 Theme tokens for PMS Admin Shell
 const Color kAdminSidebarBg = Color(0xFF151B4D); // #151B4D
@@ -24,14 +27,25 @@ class MainDashboard extends StatefulWidget {
 class _MainDashboardState extends State<MainDashboard> {
   int _selectedIndex = 0;
   bool _isSidebarExpanded = true;
+  String? _casesInitialStatus;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        AppSettingsService.startApprovalPushNotificationsListener(context);
+      }
+    });
+  }
 
   final List<_NavItem> _navItems = const [
     _NavItem(icon: Icons.dashboard_outlined, activeIcon: Icons.dashboard_rounded, label: 'Dashboard'),
-    _NavItem(icon: Icons.fact_check_outlined, activeIcon: Icons.fact_check_rounded, label: 'Approvals', hasBadge: true),
     _NavItem(icon: Icons.badge_outlined, activeIcon: Icons.badge_rounded, label: 'Officers Directory'),
     _NavItem(icon: Icons.location_city_outlined, activeIcon: Icons.location_city_rounded, label: 'Police Stations'),
     _NavItem(icon: Icons.folder_outlined, activeIcon: Icons.folder_rounded, label: 'Cases'),
     _NavItem(icon: Icons.campaign_outlined, activeIcon: Icons.campaign_rounded, label: 'Carousel & News'),
+    _NavItem(icon: Icons.notifications_none_rounded, activeIcon: Icons.notifications_rounded, label: 'Notifications'),
     _NavItem(icon: Icons.history_outlined, activeIcon: Icons.history_rounded, label: 'Audit Logs'),
     _NavItem(icon: Icons.rate_review_outlined, activeIcon: Icons.rate_review_rounded, label: 'Officer Feedback'),
     _NavItem(icon: Icons.settings_outlined, activeIcon: Icons.settings_rounded, label: 'Settings'),
@@ -41,22 +55,25 @@ class _MainDashboardState extends State<MainDashboard> {
     switch (_selectedIndex) {
       case 0:
         return DashboardView(
-          onNavigate: (index) {
+          onNavigate: (index, {String? casesStatus}) {
             setState(() {
               _selectedIndex = index;
+              _casesInitialStatus = casesStatus;
             });
           },
         );
       case 1:
-        return const ApprovalsView();
-      case 2:
         return const OfficersDirectoryView();
-      case 3:
+      case 2:
         return const PoliceStationsView();
+      case 3:
+        return CasesView(
+          initialStatus: _casesInitialStatus,
+        );
       case 4:
-        return const CasesView();
-      case 5:
         return const AnnouncementsView();
+      case 5:
+        return const NotificationsView();
       case 6:
         return const AuditLogsView();
       case 7:
@@ -66,11 +83,8 @@ class _MainDashboardState extends State<MainDashboard> {
       default:
         return Center(
           child: Text(
-            'Welcome to Super Admin Console 🚀',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
+            'Section Under Construction',
+            style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
           ),
         );
     }
@@ -82,8 +96,10 @@ class _MainDashboardState extends State<MainDashboard> {
     final autoCollapsed = screenWidth < 1000;
     final isExpanded = !autoCollapsed && _isSidebarExpanded;
 
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Row(
         children: [
           // 🌟 Custom Responsive Sidebar (#151B4D)
@@ -181,22 +197,13 @@ class _MainDashboardState extends State<MainDashboard> {
 
                 // Navigation Items List
                 Expanded(
-                  child: StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance
-                        .collection('users')
-                        .where('accountStatus', whereIn: ['pending_approval', 'pending'])
-                        .snapshots(),
-                    builder: (context, pendingSnapshot) {
-                      final pendingCount = pendingSnapshot.data?.docs.length ?? 0;
-
-                      return ListView.separated(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        itemCount: _navItems.length,
-                        separatorBuilder: (context, index) => const SizedBox(height: 4),
-                        itemBuilder: (context, index) {
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    itemCount: _navItems.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: 4),
+                    itemBuilder: (context, index) {
                           final item = _navItems[index];
                           final isSelected = _selectedIndex == index;
-                          final showBadge = item.hasBadge && pendingCount > 0;
 
                           final buttonChild = Material(
                             color: Colors.transparent,
@@ -204,6 +211,11 @@ class _MainDashboardState extends State<MainDashboard> {
                               onTap: () {
                                 setState(() {
                                   _selectedIndex = index;
+                                  if (index != 3) {
+                                    _casesInitialStatus = null;
+                                  } else {
+                                    _casesInitialStatus = 'All Cases';
+                                  }
                                 });
                               },
                               borderRadius: BorderRadius.circular(10),
@@ -228,10 +240,38 @@ class _MainDashboardState extends State<MainDashboard> {
                                 child: Row(
                                   mainAxisAlignment: isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
                                   children: [
-                                    Icon(
-                                      isSelected ? item.activeIcon : item.icon,
-                                      size: 20,
-                                      color: isSelected ? const Color(0xFF60A5FA) : const Color(0xFF94A3B8),
+                                    Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        Icon(
+                                          isSelected ? item.activeIcon : item.icon,
+                                          size: 20,
+                                          color: isSelected ? const Color(0xFF60A5FA) : const Color(0xFF94A3B8),
+                                        ),
+                                        if (index == 5 && !isExpanded)
+                                          StreamBuilder<QuerySnapshot>(
+                                            stream: FirebaseFirestore.instance
+                                                .collection('officer_notices')
+                                                .where('isRead', isEqualTo: false)
+                                                .snapshots(),
+                                            builder: (context, snapshot) {
+                                              final count = snapshot.data?.docs.length ?? 0;
+                                              if (count == 0) return const SizedBox.shrink();
+                                              return Positioned(
+                                                top: -3,
+                                                right: -4,
+                                                child: Container(
+                                                  width: 8,
+                                                  height: 8,
+                                                  decoration: const BoxDecoration(
+                                                    color: Color(0xFFEF4444),
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                      ],
                                     ),
                                     if (isExpanded) ...[
                                       const SizedBox(width: 12),
@@ -245,21 +285,31 @@ class _MainDashboardState extends State<MainDashboard> {
                                           ),
                                         ),
                                       ),
-                                      if (showBadge)
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFFEF4444),
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          child: Text(
-                                            '$pendingCount',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
+                                      if (index == 5)
+                                        StreamBuilder<QuerySnapshot>(
+                                          stream: FirebaseFirestore.instance
+                                              .collection('officer_notices')
+                                              .where('isRead', isEqualTo: false)
+                                              .snapshots(),
+                                          builder: (context, snapshot) {
+                                            final count = snapshot.data?.docs.length ?? 0;
+                                            if (count == 0) return const SizedBox.shrink();
+                                            return Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFEF4444),
+                                                borderRadius: BorderRadius.circular(10),
+                                              ),
+                                              child: Text(
+                                                '$count',
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 10.5,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            );
+                                          },
                                         ),
                                     ],
                                   ],
@@ -270,7 +320,7 @@ class _MainDashboardState extends State<MainDashboard> {
 
                           if (!isExpanded) {
                             return Tooltip(
-                              message: item.label + (showBadge ? ' ($pendingCount)' : ''),
+                              message: item.label,
                               preferBelow: false,
                               child: buttonChild,
                             );
@@ -278,9 +328,7 @@ class _MainDashboardState extends State<MainDashboard> {
 
                           return buttonChild;
                         },
-                      );
-                    },
-                  ),
+                      ),
                 ),
 
                 // Bottom Expand Button (when collapsed)
@@ -365,7 +413,6 @@ class _MainDashboardState extends State<MainDashboard> {
                           StreamBuilder<QuerySnapshot>(
                             stream: FirebaseFirestore.instance
                                 .collection('users')
-                                .where('accountStatus', whereIn: ['pending_approval', 'pending'])
                                 .snapshots(),
                             builder: (context, snapshot) {
                               if (snapshot.hasError) {
@@ -373,13 +420,20 @@ class _MainDashboardState extends State<MainDashboard> {
                                   icon: const Icon(Icons.notifications_outlined, color: Color(0xFFCBD5E1)),
                                   onPressed: () {
                                     setState(() {
-                                      _selectedIndex = 1;
+                                      _selectedIndex = 0;
                                     });
                                   },
                                 );
                               }
 
-                              final pendingCount = snapshot.data?.docs.length ?? 0;
+                              final allDocs = snapshot.data?.docs ?? [];
+                              int pendingCount = 0;
+                              for (final doc in allDocs) {
+                                final data = doc.data() as Map<String, dynamic>;
+                                if (AppConstants.isPendingApproval(data)) {
+                                  pendingCount++;
+                                }
+                              }
 
                               return Badge(
                                 isLabelVisible: pendingCount > 0,
@@ -409,44 +463,69 @@ class _MainDashboardState extends State<MainDashboard> {
                             color: const Color(0xFF282E87),
                           ),
                           const SizedBox(width: 12),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: const Color(0xFF282E87)),
-                            ),
-                            child: const Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 13,
-                                  backgroundColor: Color(0xFF2563EB),
-                                  child: Text(
-                                    'SA',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 10,
-                                      color: Colors.white,
-                                    ),
-                                  ),
+                          StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                            stream: FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(FirebaseAuth.instance.currentUser?.uid ?? 'super_admin')
+                                .snapshots(),
+                            builder: (context, profileSnap) {
+                              final data = profileSnap.data?.data() ?? {};
+                              final authUser = FirebaseAuth.instance.currentUser;
+                              final rawName = (data['name'] ?? data['fullName'] ?? authUser?.displayName)?.toString().trim();
+                              final email = (authUser?.email ?? data['email'])?.toString().trim() ?? 'admin@police.gov.in';
+
+                              // Top line: admin's actual name if set (and distinct from role label), otherwise email fallback
+                              final String displayName = (rawName != null && rawName.isNotEmpty && rawName != 'Master Admin')
+                                  ? rawName
+                                  : (email.isNotEmpty ? email : 'Administrator');
+
+                              // Bottom line: admin's role label
+                              const String role = 'Master Admin';
+
+                              final String initials = (rawName != null && rawName.isNotEmpty && rawName != 'Master Admin')
+                                  ? rawName.split(' ').where((e) => e.isNotEmpty).map((e) => e[0].toUpperCase()).take(2).join()
+                                  : 'MA';
+
+                              return Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: const Color(0xFF282E87)),
                                 ),
-                                SizedBox(width: 8),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
+                                child: Row(
                                   children: [
-                                    Text(
-                                      'Super Admin',
-                                      style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.white),
+                                    CircleAvatar(
+                                      radius: 13,
+                                      backgroundColor: const Color(0xFF2563EB),
+                                      child: Text(
+                                        initials.isNotEmpty ? initials : 'MA',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 10,
+                                          color: Colors.white,
+                                        ),
+                                      ),
                                     ),
-                                    Text(
-                                      'Commissioner Office',
-                                      style: TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8)),
+                                    const SizedBox(width: 8),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          displayName,
+                                          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.white),
+                                        ),
+                                        Text(
+                                          role,
+                                          style: const TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8)),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                              ],
-                            ),
+                              );
+                            },
                           ),
                         ],
                       ),
@@ -456,7 +535,7 @@ class _MainDashboardState extends State<MainDashboard> {
                 // Main Content Body
                 Expanded(
                   child: Container(
-                    color: const Color(0xFFF8FAFC),
+                    color: theme.scaffoldBackgroundColor,
                     child: _buildMainContent(),
                   ),
                 ),
@@ -473,12 +552,10 @@ class _NavItem {
   final IconData icon;
   final IconData activeIcon;
   final String label;
-  final bool hasBadge;
 
   const _NavItem({
     required this.icon,
     required this.activeIcon,
     required this.label,
-    this.hasBadge = false,
   });
 }

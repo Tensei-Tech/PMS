@@ -5,9 +5,13 @@ import 'package:csv/csv.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import '../utils/app_constants.dart';
+import '../utils/case_utils.dart';
+import '../services/audit_service.dart';
 
 class CasesView extends StatefulWidget {
-  const CasesView({super.key});
+  final String? initialStatus;
+
+  const CasesView({super.key, this.initialStatus});
 
   @override
   State<CasesView> createState() => _CasesViewState();
@@ -19,12 +23,28 @@ class _CasesViewState extends State<CasesView> {
   String _selectedState = 'All States';
   String? _selectedDistrict;
   String? _selectedStation;
-  String _selectedStatus = 'All Cases'; // 'All Cases', 'Active', 'Disposed / Chargesheeted'
+  late String _selectedStatus;
 
   final List<String> _states = const [
     'All States',
     'Maharashtra',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedStatus = widget.initialStatus ?? 'All Cases';
+  }
+
+  @override
+  void didUpdateWidget(covariant CasesView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialStatus != null && widget.initialStatus != oldWidget.initialStatus) {
+      setState(() {
+        _selectedStatus = widget.initialStatus!;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -35,9 +55,8 @@ class _CasesViewState extends State<CasesView> {
   void _showCaseDetailsDialog(BuildContext context, Map<String, dynamic> data, String docId) {
     final theme = Theme.of(context);
     final caseNo = data['caseNumber'] ?? data['crimeNumber'] ?? data['firNumber'] ?? docId;
-    final isDisposed = (data['status']?.toString().toLowerCase() == 'disposed' ||
-        data['status']?.toString().toLowerCase() == 'closed' ||
-        data['chargesheetNumber'] != null);
+    final isDisposed = CaseUtils.isDisposed(data);
+    final csNumber = CaseUtils.getChargesheetOrCcNumber(data, docId);
 
     showDialog(
       context: context,
@@ -60,9 +79,9 @@ class _CasesViewState extends State<CasesView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _detailRow('Status', (data['status'] ?? (isDisposed ? 'Disposed' : 'Active')).toString().toUpperCase()),
-                if (data['chargesheetNumber'] != null || isDisposed) ...[
-                  _detailRow('Chargesheet No.', data['chargesheetNumber']?.toString() ?? 'CS-${docId.substring(0, 6).toUpperCase()}'),
+                _detailRow('Status', CaseUtils.getStatusLabel(data).toUpperCase()),
+                if (isDisposed) ...[
+                  _detailRow('Chargesheet / CC No.', csNumber ?? 'CS-${docId.substring(0, 6).toUpperCase()}'),
                   _detailRow('Disposal / Court Date', _formatDate(data['disposedAt'] ?? data['updatedAt'] ?? data['createdAt'])),
                   _detailRow('Court Name', data['courtName']?.toString() ?? 'Session Court'),
                 ],
@@ -152,9 +171,6 @@ class _CasesViewState extends State<CasesView> {
 
     for (final doc in docs) {
       final data = doc.data() as Map<String, dynamic>;
-      final isDisposed = (data['status']?.toString().toLowerCase() == 'disposed' ||
-          data['status']?.toString().toLowerCase() == 'closed' ||
-          data['chargesheetNumber'] != null);
 
       rows.add([
         data['caseNumber'] ?? data['crimeNumber'] ?? data['firNumber'] ?? doc.id,
@@ -163,8 +179,8 @@ class _CasesViewState extends State<CasesView> {
         data['district'] ?? '',
         data['state'] ?? 'Maharashtra',
         data['ioName'] ?? data['assignedOfficer'] ?? '',
-        isDisposed ? 'Disposed' : 'Active',
-        data['chargesheetNumber'] ?? (isDisposed ? 'CS-${doc.id.substring(0, 6)}' : 'N/A'),
+        CaseUtils.getStatusLabel(data),
+        CaseUtils.getChargesheetOrCcNumber(data, doc.id) ?? 'N/A',
         _formatDate(data['createdAt']),
       ]);
     }
@@ -176,6 +192,12 @@ class _CasesViewState extends State<CasesView> {
       bytes: bytes,
       ext: 'csv',
       mimeType: MimeType.csv,
+    );
+
+    await AuditService.logAction(
+      action: 'CASES_EXPORTED_CSV',
+      targetUserId: 'system',
+      details: 'Exported ${docs.length} investigation records to CSV report',
     );
 
     if (mounted) {
@@ -337,6 +359,7 @@ class _CasesViewState extends State<CasesView> {
                       // Status / Chargesheet Filter
                       Expanded(
                         child: DropdownButtonFormField<String>(
+                          key: ValueKey(_selectedStatus),
                           initialValue: _selectedStatus,
                           isExpanded: true,
                           decoration: InputDecoration(
@@ -348,7 +371,7 @@ class _CasesViewState extends State<CasesView> {
                           ),
                           items: const [
                             DropdownMenuItem(value: 'All Cases', child: Text('All Cases')),
-                            DropdownMenuItem(value: 'Active', child: Text('Active Investigations')),
+                            DropdownMenuItem(value: 'Pending', child: Text('Pending')),
                             DropdownMenuItem(value: 'Disposed', child: Text('Disposed (Chargesheeted)')),
                           ],
                           onChanged: (val) => setState(() => _selectedStatus = val ?? 'All Cases'),
@@ -399,9 +422,7 @@ class _CasesViewState extends State<CasesView> {
                   final station = (data['station'] ?? data['stationName'] ?? '').toString();
                   final district = (data['district'] ?? '').toString();
                   final state = (data['state'] ?? 'Maharashtra').toString();
-                  final isDisposed = (data['status']?.toString().toLowerCase() == 'disposed' ||
-                      data['status']?.toString().toLowerCase() == 'closed' ||
-                      data['chargesheetNumber'] != null);
+                  final isDisposed = CaseUtils.isDisposed(data);
 
                   // Search query filter
                   if (_searchQuery.isNotEmpty) {
@@ -428,7 +449,7 @@ class _CasesViewState extends State<CasesView> {
                   }
 
                   // Status filter
-                  if (_selectedStatus == 'Active' && isDisposed) return false;
+                  if ((_selectedStatus == 'Pending' || _selectedStatus == 'Active') && isDisposed) return false;
                   if (_selectedStatus == 'Disposed' && !isDisposed) return false;
 
                   return true;
@@ -513,10 +534,8 @@ class _CasesViewState extends State<CasesView> {
                                 final station = data['station'] ?? data['stationName'] ?? 'Unassigned';
                                 final district = data['district'] ?? 'Maharashtra';
                                 final io = data['ioName'] ?? data['assignedOfficer'] ?? 'Unassigned IO';
-                                final isDisposed = (data['status']?.toString().toLowerCase() == 'disposed' ||
-                                    data['status']?.toString().toLowerCase() == 'closed' ||
-                                    data['chargesheetNumber'] != null);
-                                final csNumber = data['chargesheetNumber']?.toString() ?? 'CS-${doc.id.substring(0, 6).toUpperCase()}';
+                                final isDisposed = CaseUtils.isDisposed(data);
+                                final csNumber = CaseUtils.getChargesheetOrCcNumber(data, doc.id) ?? 'CS-${doc.id.substring(0, 6).toUpperCase()}';
 
                                 return DataRow(
                                   cells: [
@@ -564,7 +583,7 @@ class _CasesViewState extends State<CasesView> {
                                             )
                                           : Chip(
                                               avatar: const Icon(Icons.sync, size: 14, color: Colors.blueAccent),
-                                              label: const Text('Investigating'),
+                                              label: const Text('Pending'),
                                               backgroundColor: Colors.blue.shade50,
                                               side: BorderSide(color: Colors.blue.shade200),
                                               visualDensity: VisualDensity.compact,

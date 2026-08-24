@@ -10,9 +10,8 @@ void main() {
       ),
     );
 
-    expect(find.text('Welcome to Super Admin Console 🚀'), findsOneWidget);
+    expect(find.text('Welcome to Master Admin Console 🚀'), findsOneWidget);
     expect(find.text('Dashboard'), findsOneWidget);
-    expect(find.text('Approvals'), findsOneWidget);
     expect(find.text('Officers Directory'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
   });

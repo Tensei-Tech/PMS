@@ -75,18 +75,15 @@ class _TwoFactorAuthViewState extends State<TwoFactorAuthView> {
 
         final user = FirebaseAuth.instance.currentUser;
         if (user != null) {
-          try {
-            await user.linkWithCredential(credential);
-          } catch (_) {
-            // Already linked or non-blocking link
-          }
+          user.linkWithCredential(credential).then((_) {}, onError: (_) {});
         }
       }
 
-      await AuditService.logAction(
+      // Record audit log asynchronously in the background
+      AuditService.logAction(
         action: '2FA_VERIFIED',
         targetUserId: FirebaseAuth.instance.currentUser?.uid ?? 'super_admin',
-        details: 'Super Admin 2FA verification succeeded for ${widget.email}',
+        details: 'Master Admin 2FA verification succeeded for ${widget.email}',
       );
 
       if (!mounted) return;
@@ -97,6 +94,7 @@ class _TwoFactorAuthViewState extends State<TwoFactorAuthView> {
           backgroundColor: Colors.green.shade700,
           behavior: SnackBarBehavior.floating,
           width: 420,
+          duration: const Duration(seconds: 2),
         ),
       );
 
@@ -163,7 +161,7 @@ class _TwoFactorAuthViewState extends State<TwoFactorAuthView> {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      'Super Admin TOTP Authentication',
+                      'Master Admin TOTP Authentication',
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),

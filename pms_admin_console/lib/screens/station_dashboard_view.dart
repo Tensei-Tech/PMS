@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../utils/app_constants.dart';
 
 class StationDashboardView extends StatelessWidget {
   final String stationName;
@@ -107,6 +108,7 @@ class StationDashboardView extends StatelessWidget {
                 final docs = snapshot.data?.docs ?? [];
                 final stationOfficers = docs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
+                  if (AppConstants.isAdminUser(data)) return false;
                   final userStation = (data['stationName'] ?? data['station'] ?? data['assignedStation'])?.toString().trim();
                   final status = (data['accountStatus'] ?? data['status'] ?? 'active').toString().trim();
                   return userStation == stationName.trim() &&

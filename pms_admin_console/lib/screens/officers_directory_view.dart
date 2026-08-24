@@ -49,7 +49,7 @@ class _OfficersDirectoryViewState extends State<OfficersDirectoryView> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Archive Officer Account'),
-        content: Text('Are you sure you want to archive "$name"? Their account will be deactivated and moved to the Archived list.'),
+        content: Text('Are you sure you want to archive "$name"? Their account will be deactivated and they will lose access to the app until you restore them from the Archived list.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -72,21 +72,25 @@ class _OfficersDirectoryViewState extends State<OfficersDirectoryView> {
             .update({
           'accountStatus': 'archived',
           'status': 'inactive',
+          'isArchived': true,
+          'activeSessions': [],
+          'sessionRevokedAt': FieldValue.serverTimestamp(),
+          'archivedAt': FieldValue.serverTimestamp(),
         });
 
         await AuditService.logAction(
-          action: 'ARCHIVED',
+          action: 'OFFICER_ARCHIVED',
           targetUserId: docId,
-          details: 'Archived officer profile for $name',
+          details: 'Archived officer account for $name and revoked mobile app access',
         );
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Archived profile for $name'),
+              content: Text('Archived account for $name. Access has been revoked.'),
               backgroundColor: Colors.orange.shade800,
               behavior: SnackBarBehavior.floating,
-              width: 400,
+              width: 440,
             ),
           );
         }
@@ -94,7 +98,7 @@ class _OfficersDirectoryViewState extends State<OfficersDirectoryView> {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Failed to archive profile: $e'),
+              content: Text('Failed to archive account: $e'),
               backgroundColor: Colors.red.shade700,
               behavior: SnackBarBehavior.floating,
             ),
@@ -112,21 +116,23 @@ class _OfficersDirectoryViewState extends State<OfficersDirectoryView> {
           .update({
         'accountStatus': 'active',
         'status': 'active',
+        'isArchived': false,
+        'restoredAt': FieldValue.serverTimestamp(),
       });
 
       await AuditService.logAction(
-        action: 'RESTORED',
+        action: 'OFFICER_RESTORED',
         targetUserId: docId,
-        details: 'Restored officer profile for $name',
+        details: 'Restored officer account for $name and re-enabled mobile app access',
       );
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Restored profile for $name to Active Directory'),
+            content: Text('Restored account for $name to Active Directory. Access is re-enabled.'),
             backgroundColor: Colors.green.shade700,
             behavior: SnackBarBehavior.floating,
-            width: 400,
+            width: 440,
           ),
         );
       }
@@ -134,7 +140,7 @@ class _OfficersDirectoryViewState extends State<OfficersDirectoryView> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to restore profile: $e'),
+            content: Text('Failed to restore account: $e'),
             backgroundColor: Colors.red.shade700,
             behavior: SnackBarBehavior.floating,
           ),
@@ -218,6 +224,12 @@ class _OfficersDirectoryViewState extends State<OfficersDirectoryView> {
         bytes: bytes,
         ext: 'csv',
         mimeType: MimeType.csv,
+      );
+
+      await AuditService.logAction(
+        action: 'OFFICERS_EXPORTED_CSV',
+        targetUserId: 'system',
+        details: 'Exported ${docs.length} ${_showArchived ? 'archived' : 'active'} officer record(s) to CSV',
       );
 
       if (mounted) {
@@ -458,6 +470,8 @@ class _OfficersDirectoryViewState extends State<OfficersDirectoryView> {
 
                 final targetDocs = allDocs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
+                  if (AppConstants.isAdminUser(data)) return false; // Strictly exclude admin accounts
+
                   final accountStatus = (data['accountStatus'] ?? data['status'] ?? 'active').toString().trim().toLowerCase();
 
                   if (_showArchived) {
