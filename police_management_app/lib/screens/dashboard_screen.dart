@@ -210,157 +210,68 @@ dynamic _dashboardTileIcon(String label, dynamic fallback) {
   }
 }
 
+final Map<String, Widget> _svgIconCacheMap = {};
+
+Widget _cachedSvg(String assetPath, double multiplier, Color color, double baseSize) {
+  final dim = baseSize * multiplier;
+  final key = '$assetPath|$dim|${color.toARGB32()}';
+  return _svgIconCacheMap.putIfAbsent(
+    key,
+    () => SvgPicture.asset(
+      assetPath,
+      width: dim,
+      height: dim,
+      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+    ),
+  );
+}
+
 Widget _buildGridIcon(
     String label, dynamic fallback, Color color, double size) {
   final labelTrim = label.replaceAll('\n', ' ').trim();
 
   if (labelTrim == 'I to V') {
-    return SvgPicture.asset(
-      'assets/icons/1to5.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/1to5.svg', 1.5, color, size);
   } else if (labelTrim == 'VI') {
-    return SvgPicture.asset(
-      'assets/icons/6.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/6.svg', 1.5, color, size);
   } else if (labelTrim == 'Pending') {
-    return SvgPicture.asset(
-      'assets/icons/pending.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/pending.svg', 1.5, color, size);
   } else if (labelTrim == 'Gambling') {
-    return SvgPicture.asset(
-      'assets/icons/gambling.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/gambling.svg', 1.5, color, size);
   } else if (labelTrim == 'Juvenile') {
-    return SvgPicture.asset(
-      'assets/icons/juvenile.svg',
-      width: size * 2.2,
-      height: size * 2.2,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/juvenile.svg', 2.2, color, size);
   } else if (labelTrim.toLowerCase().replaceAll(' ', '') == 'sandtheft') {
-    return SvgPicture.asset(
-      'assets/icons/sandtheft.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/sandtheft.svg', 1.5, color, size);
   } else if (labelTrim == 'Undetected') {
-    return SvgPicture.asset(
-      'assets/icons/undetected.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/undetected.svg', 1.5, color, size);
   } else if (labelTrim == 'Hurt') {
-    return SvgPicture.asset(
-      'assets/icons/hurt.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/hurt.svg', 1.5, color, size);
   } else if (labelTrim == 'Kidnapping') {
-    return SvgPicture.asset(
-      'assets/icons/kidnapping.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/kidnapping.svg', 1.5, color, size);
   } else if (labelTrim == 'Missing') {
-    return SvgPicture.asset(
-      'assets/icons/missing.svg',
-      width: size * 2.1,
-      height: size * 2.1,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/missing.svg', 2.1, color, size);
   } else if (labelTrim == 'N.C') {
-    return SvgPicture.asset(
-      'assets/icons/nc.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/nc.svg', 1.5, color, size);
   } else if (labelTrim == 'Arrested') {
-    return SvgPicture.asset(
-      'assets/icons/arrested.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/arrested.svg', 1.5, color, size);
   } else if (labelTrim == 'POCSO') {
-    return SvgPicture.asset(
-      'assets/icons/pocso.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/pocso.svg', 1.5, color, size);
   } else if (labelTrim == 'Crime against Women') {
-    return SvgPicture.asset(
-      'assets/icons/crimewomen.svg',
-      width: size * 2.2,
-      height: size * 2.2,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/crimewomen.svg', 2.2, color, size);
   } else if (labelTrim == 'Victim') {
-    return SvgPicture.asset(
-      'assets/icons/victim.svg',
-      width: size * 2.2,
-      height: size * 2.2,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/victim.svg', 2.2, color, size);
   } else if (labelTrim == 'A.D') {
-    return SvgPicture.asset(
-      'assets/icons/ad.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/ad.svg', 1.5, color, size);
   } else if (labelTrim == 'Prohibition') {
-    return SvgPicture.asset(
-      'assets/icons/prohibiton.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/prohibiton.svg', 1.5, color, size);
   } else if (labelTrim == 'Theft') {
-    return SvgPicture.asset(
-      'assets/icons/theft.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/theft.svg', 1.5, color, size);
   } else if (labelTrim == 'Two/Four Wheeler') {
-    return SvgPicture.asset(
-      'assets/icons/2-4wheeler.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/2-4wheeler.svg', 1.5, color, size);
   } else if (labelTrim == 'Sam/Warrant') {
-    return SvgPicture.asset(
-      'assets/icons/sam-warrants.svg',
-      width: size * 2.2,
-      height: size * 2.2,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/sam-warrants.svg', 2.2, color, size);
   } else if (labelTrim == 'Muddemal') {
-    return SvgPicture.asset(
-      'assets/icons/muddemal.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/muddemal.svg', 1.5, color, size);
   } else if (labelTrim == 'RTI') {
     return SvgPicture.asset(
       'assets/icons/rti.svg',
