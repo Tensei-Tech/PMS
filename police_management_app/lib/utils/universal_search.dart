@@ -90,6 +90,35 @@ class UniversalSearch {
     DateFormat('yyyy'),
   ];
 
+  static final List<DateFormat> _naturalDateParsers = [
+    DateFormat('d MMMM yyyy'),
+    DateFormat('dd MMMM yyyy'),
+    DateFormat('d MMM yyyy'),
+    DateFormat('dd MMM yyyy'),
+    DateFormat('MMMM d yyyy'),
+    DateFormat('MMM d yyyy'),
+    DateFormat('MMMM d, yyyy'),
+    DateFormat('MMM d, yyyy'),
+    DateFormat('d MMMM'),
+    DateFormat('dd MMMM'),
+    DateFormat('d MMM'),
+    DateFormat('dd MMM'),
+    DateFormat('dd/MM/yyyy'),
+    DateFormat('d/M/yyyy'),
+    DateFormat('dd-MM-yyyy'),
+    DateFormat('d-M-yyyy'),
+    DateFormat('yyyy-MM-dd'),
+    DateFormat('yyyy/MM/dd'),
+    DateFormat('dd.MM.yyyy'),
+  ];
+
+  static final RegExp _naturalDateRegex = RegExp(
+    r'\b(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s*(\d{4})?\b',
+    caseSensitive: false,
+  );
+
+  static final RegExp _ordinalSuffixRegex = RegExp(r'(\d+)(st|nd|rd|th)\b');
+
   /// Parses natural spoken or typed date phrases like "15 August 2026", "15th Aug", "today", "yesterday", etc.
   static DateTime? tryParseNaturalDate(String raw) {
     var text = raw.trim().toLowerCase();
@@ -107,32 +136,9 @@ class UniversalSearch {
     }
 
     // Clean ordinal suffixes: "15th" -> "15", "1st" -> "1", "2nd" -> "2", "3rd" -> "3"
-    text = text.replaceAll(RegExp(r'(\d+)(st|nd|rd|th)\b'), r'$1');
+    text = text.replaceAll(_ordinalSuffixRegex, r'$1');
 
-    // Standard formats
-    final parsers = [
-      DateFormat('d MMMM yyyy'),
-      DateFormat('dd MMMM yyyy'),
-      DateFormat('d MMM yyyy'),
-      DateFormat('dd MMM yyyy'),
-      DateFormat('MMMM d yyyy'),
-      DateFormat('MMM d yyyy'),
-      DateFormat('MMMM d, yyyy'),
-      DateFormat('MMM d, yyyy'),
-      DateFormat('d MMMM'),
-      DateFormat('dd MMMM'),
-      DateFormat('d MMM'),
-      DateFormat('dd MMM'),
-      DateFormat('dd/MM/yyyy'),
-      DateFormat('d/M/yyyy'),
-      DateFormat('dd-MM-yyyy'),
-      DateFormat('d-M-yyyy'),
-      DateFormat('yyyy-MM-dd'),
-      DateFormat('yyyy/MM/dd'),
-      DateFormat('dd.MM.yyyy'),
-    ];
-
-    for (final p in parsers) {
+    for (final p in _naturalDateParsers) {
       try {
         final d = p.parseStrict(text);
         if (d.year == 1970) {
@@ -143,11 +149,7 @@ class UniversalSearch {
     }
 
     // Match patterns inside phrases like "15 august 2026" or "15 aug"
-    final dateRegex = RegExp(
-      r'\b(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s*(\d{4})?\b',
-      caseSensitive: false,
-    );
-    final match = dateRegex.firstMatch(text);
+    final match = _naturalDateRegex.firstMatch(text);
     if (match != null) {
       final day = int.tryParse(match.group(1) ?? '1') ?? 1;
       final monthStr = match.group(2)!.toLowerCase();

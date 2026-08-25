@@ -72,9 +72,12 @@ class ReportCaseListScreen extends StatelessWidget {
     );
   }
 
+  static final DateFormat _dateFormat = DateFormat('dd MMM yyyy');
+
   Widget _buildCard(BuildContext context, ModuleRecord record) {
     final statusColor = _getStatusColor(record.status);
     return Container(
+      key: ValueKey(record.id),
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -167,7 +170,7 @@ class ReportCaseListScreen extends StatelessWidget {
                     Icon(Icons.calendar_today_rounded,
                         size: 13, color: AppColors.lightSubText),
                     const SizedBox(width: 4),
-                    Text(DateFormat('dd MMM yyyy').format(record.incidentDate),
+                    Text(_dateFormat.format(record.incidentDate),
                         style: GoogleFonts.poppins(
                             fontSize: 11, color: AppColors.lightSubText)),
                   ],

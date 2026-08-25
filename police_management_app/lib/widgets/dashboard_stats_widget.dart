@@ -112,14 +112,6 @@ class _DashboardStatsWidgetState extends State<DashboardStatsWidget> {
     final disposalIds = <String>{};
     final casesIds = <String>{};
 
-    void recomputeTotal() {
-      if (!mounted) return;
-      final allIds = <String>{...casesIds, ...pendingIds, ...disposalIds};
-      setState(() {
-        _totalActive = allIds.length;
-      });
-    }
-
     _casesSub = _firestore.getStationCasesStream(station).listen(
       (records) {
         final filtered = CaseVisibility.filterRecords(
@@ -132,10 +124,11 @@ class _DashboardStatsWidgetState extends State<DashboardStatsWidget> {
           casesIds.add(r.id);
         }
         if (!mounted) return;
+        final allIds = <String>{...casesIds, ...pendingIds, ...disposalIds};
         setState(() {
           _casesLoaded = true;
+          _totalActive = allIds.length;
         });
-        recomputeTotal();
       },
       onError: (_) {
         if (!mounted) return;
@@ -155,11 +148,12 @@ class _DashboardStatsWidgetState extends State<DashboardStatsWidget> {
           pendingIds.add(r.id);
         }
         if (!mounted) return;
+        final allIds = <String>{...casesIds, ...pendingIds, ...disposalIds};
         setState(() {
           _pendingAction = filtered.length;
           _pendingLoaded = true;
+          _totalActive = allIds.length;
         });
-        recomputeTotal();
       },
       onError: (_) {
         if (!mounted) return;
@@ -179,11 +173,12 @@ class _DashboardStatsWidgetState extends State<DashboardStatsWidget> {
           disposalIds.add(r.id);
         }
         if (!mounted) return;
+        final allIds = <String>{...casesIds, ...pendingIds, ...disposalIds};
         setState(() {
           _disposed = filtered.length;
           _disposalLoaded = true;
+          _totalActive = allIds.length;
         });
-        recomputeTotal();
       },
       onError: (_) {
         if (!mounted) return;

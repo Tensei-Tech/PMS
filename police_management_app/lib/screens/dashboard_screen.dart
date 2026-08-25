@@ -1607,6 +1607,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                         fit: BoxFit.cover,
                                         width: avatarRadius * 2,
                                         height: avatarRadius * 2,
+                                        cacheWidth: 160,
+                                        cacheHeight: 160,
                                         errorBuilder: (ctx, err, stack) => Text(
                                           initial,
                                           style: GoogleFonts.poppins(
@@ -4106,6 +4108,7 @@ class _HomeTabState extends State<_HomeTab> {
                 itemCount: top10.length,
                 itemBuilder: (context, i) {
                   return Padding(
+                    key: ValueKey(top10[i]['id'] ?? i),
                     padding: const EdgeInsets.only(bottom: 12),
                     child: _caseCard(top10[i]),
                   );
@@ -4408,6 +4411,10 @@ class _ViewTabState extends State<_ViewTab> {
   int _selectedTabIndex = 0;
   final TextEditingController _searchCtrl = TextEditingController();
   String _query = '';
+  String? _cachedStreamKey;
+  Stream<List<ModuleRecord>>? _cachedStream;
+
+  static final DateFormat _viewDateFormat = DateFormat('dd MMM yyyy');
 
   static const List<(int, IconData, String)> _tabs = [
     (0, Icons.folder_open_rounded, 'All'),
@@ -4423,33 +4430,41 @@ class _ViewTabState extends State<_ViewTab> {
 
   Stream<List<ModuleRecord>> _getStream(
       AuthProvider auth, CaseVisibilityMode mode) {
-    if (_selectedTabIndex == 1) {
-      return _firestore.getPendingCasesStream(auth.activeStation).map(
-            (records) => CaseVisibility.filterRecords(
-              records,
-              uid: auth.uid,
-              officerName: auth.displayName,
-              mode: mode,
-            ),
-          );
-    } else if (_selectedTabIndex == 2) {
-      return _firestore.getDisposalCasesStream(auth.activeStation).map(
-            (records) => CaseVisibility.filterRecords(
-              records,
-              uid: auth.uid,
-              officerName: auth.displayName,
-              mode: mode,
-            ),
-          );
+    final key = '${auth.activeStation}|${mode.name}|${auth.uid}|$_selectedTabIndex';
+    if (_cachedStreamKey == key && _cachedStream != null) {
+      return _cachedStream!;
     }
-    return _firestore.getStationCasesStream(auth.activeStation).map(
-          (records) => CaseVisibility.filterRecords(
-            records,
-            uid: auth.uid,
-            officerName: auth.displayName,
-            mode: mode,
-          ),
-        );
+    _cachedStreamKey = key;
+
+    if (_selectedTabIndex == 1) {
+      _cachedStream = _firestore.getPendingCasesStream(auth.activeStation).map(
+            (records) => CaseVisibility.filterRecords(
+              records,
+              uid: auth.uid,
+              officerName: auth.displayName,
+              mode: mode,
+            ),
+          ).asBroadcastStream();
+    } else if (_selectedTabIndex == 2) {
+      _cachedStream = _firestore.getDisposalCasesStream(auth.activeStation).map(
+            (records) => CaseVisibility.filterRecords(
+              records,
+              uid: auth.uid,
+              officerName: auth.displayName,
+              mode: mode,
+            ),
+          ).asBroadcastStream();
+    } else {
+      _cachedStream = _firestore.getStationCasesStream(auth.activeStation).map(
+            (records) => CaseVisibility.filterRecords(
+              records,
+              uid: auth.uid,
+              officerName: auth.displayName,
+              mode: mode,
+            ),
+          ).asBroadcastStream();
+    }
+    return _cachedStream!;
   }
 
   List<ModuleRecord> _filterRecords(List<ModuleRecord> all) {
@@ -4705,392 +4720,373 @@ class _ViewTabState extends State<_ViewTab> {
                 ),
               )
             else
-              SliverToBoxAdapter(
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 820),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.md,
-                        0,
-                        AppSpacing.md,
-                        AppSpacing.xl,
-                      ),
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: filtered.length,
-                        itemBuilder: (context, i) {
-                          final c = filtered[i];
-                          final isDisposed = c.status.toLowerCase() == 'closed' ||
-                              c.status.toLowerCase() == 'disposal' ||
-                              c.status.toLowerCase() == 'resolved' ||
-                              c.status.toLowerCase() == 'disposed';
-                          final displayStatus =
-                              isDisposed ? 'Disposal' : 'Pending';
-                          final accentColor = _selectedTabIndex == 2 || isDisposed
-                              ? AppColors.successGreen
-                              : _selectedTabIndex == 1
-                                  ? AppColors.warningOrange
-                                  : AppColors.infoBlue;
-                          final statusColor = isDisposed
-                              ? AppColors.successGreen
-                              : AppColors.warningOrange;
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  0,
+                  AppSpacing.md,
+                  AppSpacing.xl,
+                ),
+                sliver: SliverList.builder(
+                  itemCount: filtered.length,
+                  itemBuilder: (context, i) {
+                    final c = filtered[i];
+                    final isDisposed = c.status.toLowerCase() == 'closed' ||
+                        c.status.toLowerCase() == 'disposal' ||
+                        c.status.toLowerCase() == 'resolved' ||
+                        c.status.toLowerCase() == 'disposed';
+                    final displayStatus =
+                        isDisposed ? 'Disposal' : 'Pending';
+                    final accentColor = _selectedTabIndex == 2 || isDisposed
+                        ? AppColors.successGreen
+                        : _selectedTabIndex == 1
+                            ? AppColors.warningOrange
+                            : AppColors.infoBlue;
+                    final statusColor = isDisposed
+                        ? AppColors.successGreen
+                        : AppColors.warningOrange;
 
-                          final displayTitle = c.title.trim().isNotEmpty
-                              ? c.title.trim()
-                              : 'Untitled Case';
-                          final firLabel = c.caseNumber.trim().isNotEmpty
-                              ? c.caseNumber.trim()
-                              : 'No FIR / case number';
+                    final displayTitle = c.title.trim().isNotEmpty
+                        ? c.title.trim()
+                        : 'Untitled Case';
+                    final firLabel = c.caseNumber.trim().isNotEmpty
+                        ? c.caseNumber.trim()
+                        : 'No FIR / case number';
 
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 10),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(AppRadius.md),
-                              border: Border.all(color: AppColors.lightBorder),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.03),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
+                    return Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 820),
+                        child: Container(
+                          key: ValueKey(c.id),
+                          margin: const EdgeInsets.only(bottom: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                            border: Border(
+                              left: BorderSide(color: accentColor, width: 4),
+                              top: const BorderSide(color: AppColors.lightBorder),
+                              right: const BorderSide(color: AppColors.lightBorder),
+                              bottom: const BorderSide(color: AppColors.lightBorder),
                             ),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                borderRadius:
-                                    BorderRadius.circular(AppRadius.md),
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    AppTheme.fadeSlideRoute(
-                                      page: c.moduleKey == 'ad'
-                                          ? AdRecordDetailScreen(record: c)
-                                          : ModuleRecordDetailScreen(record: c),
-                                    ),
-                                  );
-                                },
-                                child: IntrinsicHeight(
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: [
-                                      Container(
-                                        width: 4,
-                                        decoration: BoxDecoration(
-                                          color: accentColor,
-                                          borderRadius:
-                                              const BorderRadius.horizontal(
-                                            left: Radius.circular(AppRadius.md),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.03),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.md),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  AppTheme.fadeSlideRoute(
+                                    page: c.moduleKey == 'ad'
+                                        ? AdRecordDetailScreen(record: c)
+                                        : ModuleRecordDetailScreen(record: c),
+                                  ),
+                                );
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    // Top Row: FIR and Status Badge
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding:
+                                              const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 3,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.navyMid
+                                                .withValues(
+                                                    alpha: 0.08),
+                                            borderRadius:
+                                                BorderRadius.circular(
+                                                    AppRadius.sm),
+                                          ),
+                                          child: Text(
+                                            firLabel,
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 11,
+                                              fontWeight:
+                                                  FontWeight.w600,
+                                              color: AppColors
+                                                  .navyDark,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                      Expanded(
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(12),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
+                                        const Spacer(),
+                                        Container(
+                                          padding:
+                                              const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 3,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: statusColor
+                                                .withValues(
+                                                    alpha: 0.12),
+                                            borderRadius:
+                                                BorderRadius.circular(
+                                                    AppRadius.full),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize:
+                                                MainAxisSize.min,
                                             children: [
-                                              // Top Row: FIR and Status Badge
-                                              Row(
-                                                children: [
-                                                  Container(
-                                                    padding:
-                                                        const EdgeInsets.symmetric(
-                                                      horizontal: 8,
-                                                      vertical: 3,
-                                                    ),
-                                                    decoration: BoxDecoration(
-                                                      color: AppColors.navyMid
-                                                          .withValues(
-                                                              alpha: 0.08),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              AppRadius.sm),
-                                                    ),
-                                                    child: Text(
-                                                      firLabel,
-                                                      style: GoogleFonts.poppins(
-                                                        fontSize: 11,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        color: AppColors
-                                                            .navyDark,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  const Spacer(),
-                                                  Container(
-                                                    padding:
-                                                        const EdgeInsets.symmetric(
-                                                      horizontal: 8,
-                                                      vertical: 3,
-                                                    ),
-                                                    decoration: BoxDecoration(
-                                                      color: statusColor
-                                                          .withValues(
-                                                              alpha: 0.12),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              AppRadius.full),
-                                                    ),
-                                                    child: Row(
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      children: [
-                                                        Container(
-                                                          width: 6,
-                                                          height: 6,
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            color: statusColor,
-                                                            shape:
-                                                                BoxShape.circle,
-                                                          ),
-                                                        ),
-                                                        const SizedBox(width: 4),
-                                                        Text(
-                                                          displayStatus,
-                                                          style: GoogleFonts
-                                                              .poppins(
-                                                            fontSize: 10.5,
-                                                            fontWeight:
-                                                                FontWeight.w600,
-                                                            color: statusColor,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              const SizedBox(height: 6),
-
-                                              // Case Title
-                                              Text(
-                                                displayTitle,
-                                                style: GoogleFonts.poppins(
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: AppColors.navyDark,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 3),
-
-                                              // Category Pill
                                               Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                  horizontal: 6,
-                                                  vertical: 2,
-                                                ),
-                                                decoration: BoxDecoration(
-                                                  color: AppColors.goldPrimary
-                                                      .withValues(alpha: 0.12),
-                                                  borderRadius:
-                                                      BorderRadius.circular(4),
-                                                ),
-                                                child: Text(
-                                                  c.firestoreCategoryDisplayName,
-                                                  style: GoogleFonts.poppins(
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: AppColors.goldDark,
-                                                  ),
+                                                width: 6,
+                                                height: 6,
+                                                decoration:
+                                                    BoxDecoration(
+                                                  color: statusColor,
+                                                  shape:
+                                                      BoxShape.circle,
                                                 ),
                                               ),
-                                              const SizedBox(height: 8),
-
-                                              // Metadata row
-                                              Wrap(
-                                                spacing: 12,
-                                                runSpacing: 4,
-                                                children: [
-                                                  Row(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      const Icon(
-                                                        Icons
-                                                            .calendar_today_rounded,
-                                                        size: 12,
-                                                        color: AppColors
-                                                            .lightSubText,
-                                                      ),
-                                                      const SizedBox(width: 4),
-                                                      Text(
-                                                        DateFormat('dd MMM yyyy')
-                                                            .format(
-                                                                c.incidentDate),
-                                                        style:
-                                                            GoogleFonts.poppins(
-                                                          fontSize: 11,
-                                                          color: AppColors
-                                                              .lightSubText,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  if (c.location.isNotEmpty)
-                                                    Row(
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      children: [
-                                                        const Icon(
-                                                          Icons
-                                                              .location_on_rounded,
-                                                          size: 12,
-                                                          color: AppColors
-                                                              .lightSubText,
-                                                        ),
-                                                        const SizedBox(width: 4),
-                                                        Text(
-                                                          c.location,
-                                                          style: GoogleFonts
-                                                              .poppins(
-                                                            fontSize: 11,
-                                                            color: AppColors
-                                                                .lightSubText,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  if (c.assignedOfficer
-                                                      .isNotEmpty)
-                                                    Row(
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      children: [
-                                                        const Icon(
-                                                          Icons.person_rounded,
-                                                          size: 12,
-                                                          color: AppColors
-                                                              .lightSubText,
-                                                        ),
-                                                        const SizedBox(width: 4),
-                                                        Text(
-                                                          c.assignedOfficer,
-                                                          style: GoogleFonts
-                                                              .poppins(
-                                                            fontSize: 11,
-                                                            color: AppColors
-                                                                .lightSubText,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                ],
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                displayStatus,
+                                                style: GoogleFonts
+                                                    .poppins(
+                                                  fontSize: 10.5,
+                                                  fontWeight:
+                                                      FontWeight.w600,
+                                                  color: statusColor,
+                                                ),
                                               ),
-                                              const Divider(height: 20),
-
-                                              // Actions Row: Edit (Guarded), Reminder (Senior Only), PDF, View
-                                              Builder(builder: (ctx) {
-                                                final canEdit =
-                                                    PoliceRbacHelper
-                                                        .canEditRecord(c, auth);
-                                                final canSendReminder =
-                                                    PoliceRbacHelper
-                                                        .canSendReminder(auth);
-
-                                                return Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceAround,
-                                                  children: [
-                                                    if (canEdit)
-                                                      _buildCardAction(
-                                                        icon: Icons
-                                                            .edit_note_rounded,
-                                                        label: 'Edit',
-                                                        color:
-                                                            AppColors.infoBlue,
-                                                        onTap: () {
-                                                          Navigator.push(
-                                                            context,
-                                                            AppTheme
-                                                                .fadeSlideRoute(
-                                                              page:
-                                                                  CommonFormScreen(
-                                                                moduleKey:
-                                                                    c.moduleKey,
-                                                                moduleLabel: c
-                                                                    .firestoreCategoryDisplayName,
-                                                                existingRecord:
-                                                                    c,
-                                                             ),
-                                                            ),
-                                                          );
-                                                        },
-                                                      ),
-                                                    if (canSendReminder)
-                                                      _buildCardAction(
-                                                        icon: Icons
-                                                            .notifications_active_outlined,
-                                                        label: 'Reminder',
-                                                        color: AppColors
-                                                            .warningOrange,
-                                                        onTap: () {
-                                                          SendReminderDialog
-                                                              .show(context, c);
-                                                        },
-                                                      ),
-                                                    _buildCardAction(
-                                                      icon: Icons
-                                                          .picture_as_pdf_rounded,
-                                                      label: 'PDF',
-                                                      color:
-                                                          AppColors.dangerRed,
-                                                      onTap: () {
-                                                        runWithPdfAuthGate(
-                                                          context,
-                                                          () => ModulePdfHelper
-                                                              .generatePdf(c),
-                                                        );
-                                                      },
-                                                    ),
-                                                    _buildCardAction(
-                                                      icon: Icons
-                                                          .visibility_rounded,
-                                                      label: 'View',
-                                                      color:
-                                                          AppColors.goldPrimary,
-                                                      onTap: () {
-                                                        Navigator.push(
-                                                          context,
-                                                          AppTheme
-                                                            .fadeSlideRoute(
-                                                            page: c.moduleKey ==
-                                                                    'ad'
-                                                                ? AdRecordDetailScreen(
-                                                                    record: c)
-                                                                : ModuleRecordDetailScreen(
-                                                                    record: c),
-                                                          ),
-                                                        );
-                                                      },
-                                                    ),
-                                                  ],
-                                                );
-                                              }),
                                             ],
                                           ),
                                         ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+
+                                    // Case Title
+                                    Text(
+                                      displayTitle,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.navyDark,
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                    const SizedBox(height: 3),
+
+                                    // Category Pill
+                                    Container(
+                                      padding:
+                                          const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.goldPrimary
+                                            .withValues(alpha: 0.12),
+                                        borderRadius:
+                                            BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        c.firestoreCategoryDisplayName,
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.goldDark,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+
+                                    // Metadata row
+                                    Wrap(
+                                      spacing: 12,
+                                      runSpacing: 4,
+                                      children: [
+                                        Row(
+                                          mainAxisSize:
+                                              MainAxisSize.min,
+                                          children: [
+                                            const Icon(
+                                              Icons
+                                                  .calendar_today_rounded,
+                                              size: 12,
+                                              color: AppColors
+                                                  .lightSubText,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              _ViewTabState._viewDateFormat
+                                                  .format(
+                                                      c.incidentDate),
+                                              style:
+                                                  GoogleFonts.poppins(
+                                                fontSize: 11,
+                                                color: AppColors
+                                                    .lightSubText,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        if (c.location.isNotEmpty)
+                                          Row(
+                                            mainAxisSize:
+                                                MainAxisSize.min,
+                                            children: [
+                                              const Icon(
+                                                Icons
+                                                    .location_on_rounded,
+                                                size: 12,
+                                                color: AppColors
+                                                    .lightSubText,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                c.location,
+                                                style: GoogleFonts
+                                                    .poppins(
+                                                  fontSize: 11,
+                                                  color: AppColors
+                                                      .lightSubText,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        if (c.assignedOfficer
+                                            .isNotEmpty)
+                                          Row(
+                                            mainAxisSize:
+                                                MainAxisSize.min,
+                                            children: [
+                                              const Icon(
+                                                Icons.person_rounded,
+                                                size: 12,
+                                                color: AppColors
+                                                    .lightSubText,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                c.assignedOfficer,
+                                                style: GoogleFonts
+                                                    .poppins(
+                                                  fontSize: 11,
+                                                  color: AppColors
+                                                      .lightSubText,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                      ],
+                                    ),
+                                    const Divider(height: 20),
+
+                                    // Actions Row: Edit (Guarded), Reminder (Senior Only), PDF, View
+                                    Builder(builder: (ctx) {
+                                      final canEdit =
+                                          PoliceRbacHelper
+                                              .canEditRecord(c, auth);
+                                      final canSendReminder =
+                                          PoliceRbacHelper
+                                              .canSendReminder(auth);
+
+                                      return Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment
+                                                .spaceAround,
+                                        children: [
+                                          if (canEdit)
+                                            _buildCardAction(
+                                              icon: Icons
+                                                  .edit_note_rounded,
+                                              label: 'Edit',
+                                              color:
+                                                  AppColors.infoBlue,
+                                              onTap: () {
+                                                Navigator.push(
+                                                  context,
+                                                  AppTheme
+                                                      .fadeSlideRoute(
+                                                    page:
+                                                        CommonFormScreen(
+                                                      moduleKey:
+                                                          c.moduleKey,
+                                                      moduleLabel: c
+                                                          .firestoreCategoryDisplayName,
+                                                      existingRecord:
+                                                          c,
+                                                   ),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          if (canSendReminder)
+                                            _buildCardAction(
+                                              icon: Icons
+                                                  .notifications_active_outlined,
+                                              label: 'Reminder',
+                                              color: AppColors
+                                                  .warningOrange,
+                                              onTap: () {
+                                                SendReminderDialog
+                                                    .show(context, c);
+                                              },
+                                            ),
+                                          _buildCardAction(
+                                            icon: Icons
+                                                .picture_as_pdf_rounded,
+                                            label: 'PDF',
+                                            color:
+                                                AppColors.dangerRed,
+                                            onTap: () {
+                                              runWithPdfAuthGate(
+                                                context,
+                                                () => ModulePdfHelper
+                                                    .generatePdf(c),
+                                              );
+                                            },
+                                          ),
+                                          _buildCardAction(
+                                            icon: Icons
+                                                .visibility_rounded,
+                                            label: 'View',
+                                            color:
+                                                AppColors.goldPrimary,
+                                            onTap: () {
+                                              Navigator.push(
+                                                context,
+                                                AppTheme
+                                                  .fadeSlideRoute(
+                                                  page: c.moduleKey ==
+                                                          'ad'
+                                                      ? AdRecordDetailScreen(
+                                                          record: c)
+                                                      : ModuleRecordDetailScreen(
+                                                          record: c),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ],
+                                      );
+                                    }),
+                                  ],
                                 ),
                               ),
                             ),
-                          );
-                        },
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ),
           ],

@@ -189,6 +189,7 @@ class _SearchSheetState extends State<_SearchSheet> {
                   final item = _filtered[index];
                   final isSelected = item == widget.initial;
                   return ListTile(
+                    key: ValueKey(item),
                     title: Text(item, style: GoogleFonts.poppins(fontSize: 14)),
                     trailing: isSelected
                         ? const Icon(Icons.check_circle_rounded, color: AppColors.successGreen)

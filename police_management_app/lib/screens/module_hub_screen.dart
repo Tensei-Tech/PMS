@@ -131,6 +131,9 @@ class _ModuleHubScreenState extends State<ModuleHubScreen> {
     'IO Wise',
   ];
 
+  static final DateFormat _hubDateFormatter = DateFormat('dd MMM yyyy');
+  static final DateFormat _hubTimeFormatter = DateFormat('hh:mm a');
+
   @override
   void initState() {
     super.initState();
@@ -414,33 +417,51 @@ class _ModuleHubScreenState extends State<ModuleHubScreen> {
     int closedCount = 0;
 
     if (widget.moduleKey == 'pending') {
-      // Aggregate across ALL categories and show only active (non-closed) cases
+      // Aggregate across ALL categories and show only active (non-closed) cases in a single pass
       final consolidated = _getConsolidatedRecords(context);
-      allRecords = consolidated
-          .where((r) =>
-              r.status != 'Closed' && r.moduleKey != 'nc')
-          .toList();
+      allRecords = <ModuleRecord>[];
+      for (final r in consolidated) {
+        if (r.status != 'Closed' && r.moduleKey != 'nc') {
+          allRecords.add(r);
+          if (r.status == 'Open') {
+            openCount++;
+          } else if (r.status == 'Active') {
+            activeCount++;
+          } else if (r.status == 'Resolved') {
+            resolvedCount++;
+          }
+        }
+      }
       totalCount = allRecords.length;
-      openCount = allRecords.where((r) => r.status == 'Open').length;
-      activeCount = allRecords.where((r) => r.status == 'Active').length;
-      resolvedCount = allRecords.where((r) => r.status == 'Resolved').length;
-      closedCount = 0; // Closed cases are excluded from pending
+      closedCount = 0;
     } else if (widget.moduleKey == 'disposal') {
-      // Aggregate across ALL categories and show only closed cases
+      // Aggregate across ALL categories and show only closed cases in a single pass
       final consolidated = _getConsolidatedRecords(context);
-      allRecords = consolidated.where((r) => r.status == 'Closed').toList();
+      allRecords = <ModuleRecord>[];
+      for (final r in consolidated) {
+        if (r.status == 'Closed') {
+          allRecords.add(r);
+        }
+      }
       totalCount = allRecords.length;
-      openCount = 0; // Only closed cases in disposal
+      openCount = 0;
       activeCount = 0;
       resolvedCount = 0;
-      closedCount = allRecords.length;
+      closedCount = totalCount;
     } else if (widget.moduleKey == 'monthly') {
       allRecords = _getConsolidatedRecords(context);
       totalCount = allRecords.length;
-      openCount = allRecords.where((r) => r.status == 'Open').length;
-      activeCount = allRecords.where((r) => r.status == 'Active').length;
-      resolvedCount = allRecords.where((r) => r.status == 'Resolved').length;
-      closedCount = allRecords.where((r) => r.status == 'Closed').length;
+      for (final r in allRecords) {
+        if (r.status == 'Open') {
+          openCount++;
+        } else if (r.status == 'Active') {
+          activeCount++;
+        } else if (r.status == 'Resolved') {
+          resolvedCount++;
+        } else if (r.status == 'Closed') {
+          closedCount++;
+        }
+      }
     } else {
       final provider = _watchProvider(context);
       allRecords = provider.getFilteredRecords(widget.subCategory);
@@ -452,30 +473,24 @@ class _ModuleHubScreenState extends State<ModuleHubScreen> {
     }
 
     final List<ModuleRecord> filtered;
-    if (widget.moduleKey == 'detected' || widget.moduleKey == 'undetected') {
-      if (_filter == 'Disposal' || _filter == 'Closed' || _filter == 'Resolved') {
-        filtered = allRecords
-            .where((r) =>
-                r.status == 'Disposal' ||
-                r.status == 'Closed' ||
-                r.status == 'Resolved')
-            .toList();
-      } else if (_filter == 'Pending' ||
-          _filter == 'Open' ||
-          _filter == 'Active') {
-        filtered = allRecords
-            .where((r) =>
-                r.status != 'Disposal' &&
-                r.status != 'Closed' &&
-                r.status != 'Resolved')
-            .toList();
-      } else {
-        filtered = allRecords;
-      }
+    if (_filter == 'Disposal' || _filter == 'Closed' || _filter == 'Resolved') {
+      filtered = allRecords
+          .where((r) =>
+              r.status == 'Disposal' ||
+              r.status == 'Closed' ||
+              r.status == 'Resolved')
+          .toList();
+    } else if (_filter == 'Pending' ||
+        _filter == 'Open' ||
+        _filter == 'Active') {
+      filtered = allRecords
+          .where((r) =>
+              r.status != 'Disposal' &&
+              r.status != 'Closed' &&
+              r.status != 'Resolved')
+          .toList();
     } else {
-      filtered = _filter == 'All'
-          ? allRecords
-          : allRecords.where((r) => r.status == _filter).toList();
+      filtered = allRecords;
     }
 
     return Scaffold(
@@ -552,7 +567,6 @@ class _ModuleHubScreenState extends State<ModuleHubScreen> {
       title: widget.moduleLabel,
       subtitle: '$total record${total == 1 ? '' : 's'} registered',
       badgeLabel: widget.moduleLabel.toUpperCase(),
-      onAddPressed: widget.readOnly ? null : () => _openNewEntryForm(context),
       backgroundColor: (widget.moduleKey == 'detected' || widget.moduleKey == 'undetected' || widget.moduleKey == 'disposal') ? AppColors.navyDark : null,
     );
   }
@@ -3335,77 +3349,16 @@ class _ModuleHubScreenState extends State<ModuleHubScreen> {
 
   Widget _buildStatsRow(
       int open, int active, int resolved, int closed, int total) {
-    if (widget.moduleKey == 'detected' || widget.moduleKey == 'undetected') {
-      final provider = _watchProvider(context);
-      final allRecs = provider.getFilteredRecords(widget.subCategory);
-      final disposalCount = allRecs
-          .where((r) =>
-              r.status == 'Disposal' ||
-              r.status == 'Closed' ||
-              r.status == 'Resolved')
-          .length;
-      final pendingCount = allRecs.length - disposalCount;
-      final totalCaseCount = allRecs.length;
+    final disposal = resolved + closed;
+    final pending = total - disposal;
 
-      return Row(
-        children: [
-          _statCard('Total Case', totalCaseCount, AppColors.infoBlue, 'All'),
-          const SizedBox(width: 8),
-          _statCard('Pending', pendingCount, AppColors.warningOrange, 'Pending'),
-          const SizedBox(width: 8),
-          _statCard('Disposal', disposalCount, AppColors.successGreen, 'Disposal'),
-        ],
-      );
-    }
-
-    return Column(
+    return Row(
       children: [
-        if (!widget.readOnly) ...[
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => _openNewEntryForm(context),
-                    icon: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
-                    label: Text(
-                      '+ Add New ${widget.moduleLabel} Case',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.navyDark,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: const StadiumBorder(),
-                      elevation: 3,
-                      shadowColor: AppColors.navyDark.withValues(alpha: 0.3),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-        Row(children: [
-          _statCard('Total', total, AppColors.infoBlue, 'All'),
-          const SizedBox(width: 8),
-          _statCard('Open', open, AppColors.warningOrange, 'Open'),
-          const SizedBox(width: 8),
-          _statCard('Active', active, AppColors.goldPrimary, 'Active'),
-        ]),
-        const SizedBox(height: 8),
-        Row(children: [
-          _statCard('Resolved', resolved, AppColors.successGreen, 'Resolved'),
-          const SizedBox(width: 8),
-          _statCard('Closed', closed, const Color(0xFF607D8B), 'Closed'),
-          const SizedBox(width: 8),
-          Expanded(child: const SizedBox()),
-        ]),
+        _statCard('Total', total, AppColors.infoBlue, 'All'),
+        const SizedBox(width: 8),
+        _statCard('Disposal', disposal, AppColors.successGreen, 'Disposal'),
+        const SizedBox(width: 8),
+        _statCard('Pending', pending, AppColors.warningOrange, 'Pending'),
       ],
     );
   }
@@ -3542,6 +3495,7 @@ class _ModuleHubScreenState extends State<ModuleHubScreen> {
         record.subCategory == 'Property & Seizure Form';
     if (isDetailFormHistory) {
       return Center(
+        key: ValueKey(record.id),
         child: Container(
           constraints: const BoxConstraints(maxWidth: 480),
           margin: const EdgeInsets.only(bottom: 12),
@@ -3582,7 +3536,7 @@ class _ModuleHubScreenState extends State<ModuleHubScreen> {
                             size: 13, color: AppColors.lightSubText),
                         const SizedBox(width: 4),
                         Text(
-                          DateFormat('dd MMM yyyy').format(record.incidentDate),
+                          _hubDateFormatter.format(record.incidentDate),
                           style: GoogleFonts.poppins(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
@@ -3594,7 +3548,7 @@ class _ModuleHubScreenState extends State<ModuleHubScreen> {
                             size: 13, color: AppColors.lightSubText),
                         const SizedBox(width: 4),
                         Text(
-                          DateFormat('hh:mm a').format(record.createdAt),
+                          _hubTimeFormatter.format(record.createdAt),
                           style: GoogleFonts.poppins(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
@@ -3671,6 +3625,7 @@ class _ModuleHubScreenState extends State<ModuleHubScreen> {
       sc = _statusColor(record.status);
     }
     return Container(
+      key: ValueKey(record.id),
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -3765,7 +3720,7 @@ class _ModuleHubScreenState extends State<ModuleHubScreen> {
                 Icon(Icons.calendar_today_rounded,
                     size: 13, color: AppColors.lightSubText),
                 const SizedBox(width: 4),
-                Text(DateFormat('dd MMM yyyy').format(record.incidentDate),
+                Text(_hubDateFormatter.format(record.incidentDate),
                     style: GoogleFonts.poppins(
                         fontSize: 11, color: AppColors.lightSubText)),
               ]),

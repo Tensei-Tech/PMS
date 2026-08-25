@@ -22,6 +22,8 @@ class _AnalyticsPerformanceScreenState
     extends State<AnalyticsPerformanceScreen> {
   final FirestoreService _firestore = FirestoreService();
   String _selectedTimeFilter = 'All Time';
+  String? _cachedStation;
+  Stream<List<ModuleRecord>>? _cachedStream;
 
   static const List<String> _timeFilters = [
     'All Time',
@@ -29,6 +31,15 @@ class _AnalyticsPerformanceScreenState
     'Last 30 Days',
     'This Year',
   ];
+
+  Stream<List<ModuleRecord>> _getStationStream(String station) {
+    if (_cachedStation == station && _cachedStream != null) {
+      return _cachedStream!;
+    }
+    _cachedStation = station;
+    _cachedStream = _firestore.getStationCasesStream(station).asBroadcastStream();
+    return _cachedStream!;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -105,7 +116,7 @@ class _AnalyticsPerformanceScreenState
         ],
       ),
       body: StreamBuilder<List<ModuleRecord>>(
-        stream: _firestore.getStationCasesStream(activeStation),
+        stream: _getStationStream(activeStation),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());

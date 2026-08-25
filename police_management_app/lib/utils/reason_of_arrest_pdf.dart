@@ -5,6 +5,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 import 'form_io_terminology.dart';
+import 'pdf_unicode_fonts.dart';
 
 Future<void> previewReasonOfArrestPdf(
   BuildContext context,
@@ -16,10 +17,10 @@ Future<void> previewReasonOfArrestPdf(
       'Reason_of_Arrest_${DateTime.now().millisecondsSinceEpoch}.pdf';
   try {
     if (kIsWeb) {
-      await Printing.sharePdf(bytes: bytes, filename: fileName);
-    } else {
       await Printing.layoutPdf(onLayout: (_) async => bytes, name: fileName);
+      return;
     }
+    await Printing.sharePdf(bytes: bytes, filename: fileName);
   } catch (_) {
     await Printing.sharePdf(bytes: bytes, filename: fileName);
   }
@@ -27,10 +28,10 @@ Future<void> previewReasonOfArrestPdf(
 
 Future<Uint8List> generateReasonOfArrestPdf(Map<String, dynamic> doc) async {
   final pdf = pw.Document();
-  final loraRegular = await PdfGoogleFonts.loraRegular();
-  final loraBold = await PdfGoogleFonts.loraBold();
-  final devanagari = await PdfGoogleFonts.notoSansDevanagariRegular();
-  final devanagariBold = await PdfGoogleFonts.notoSansDevanagariBold();
+  final loraRegular = await PdfUnicodeFonts.loraRegular();
+  final loraBold = await PdfUnicodeFonts.loraBold();
+  final devanagari = await PdfUnicodeFonts.devanagariRegular();
+  final devanagariBold = await PdfUnicodeFonts.devanagariBold();
 
   final body = pw.TextStyle(font: loraRegular, fontSize: 10);
   final bold = pw.TextStyle(font: loraBold, fontSize: 11, fontWeight: pw.FontWeight.bold);

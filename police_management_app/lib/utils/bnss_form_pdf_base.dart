@@ -5,6 +5,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 import 'marathi_text_renderer.dart';
+import 'pdf_unicode_fonts.dart';
 
 Future<void> previewBnssFormPdf(
   BuildContext context,
@@ -56,10 +57,10 @@ Future<Uint8List> generateBnssFormPdf(
   required List<BnssPdfSection> sections,
 }) async {
   final pdf = pw.Document();
-  final loraRegular = await PdfGoogleFonts.loraRegular();
-  final loraBold = await PdfGoogleFonts.loraBold();
-  final devanagari = await PdfGoogleFonts.notoSansDevanagariRegular();
-  final devanagariBold = await PdfGoogleFonts.notoSansDevanagariBold();
+  final loraRegular = await PdfUnicodeFonts.loraRegular();
+  final loraBold = await PdfUnicodeFonts.loraBold();
+  final devanagari = await PdfUnicodeFonts.devanagariRegular();
+  final devanagariBold = await PdfUnicodeFonts.devanagariBold();
 
   final body = pw.TextStyle(font: loraRegular, fontSize: 10);
   final bold = pw.TextStyle(font: loraBold, fontSize: 11, fontWeight: pw.FontWeight.bold);

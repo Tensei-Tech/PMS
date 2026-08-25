@@ -6,6 +6,7 @@ import 'package:printing/printing.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'marathi_text_renderer.dart';
 import 'form_io_terminology.dart';
+import 'pdf_unicode_fonts.dart';
 import '../widgets/form_section_utils.dart';
 
 Future<void> previewPropertySeizurePdf(
@@ -17,10 +18,13 @@ Future<void> previewPropertySeizurePdf(
   final fileName = 'Property_Seizure_Form_${DateTime.now().millisecondsSinceEpoch}.pdf';
   try {
     if (kIsWeb) {
-      await Printing.sharePdf(bytes: bytes, filename: fileName);
-    } else {
-      await Printing.layoutPdf(onLayout: (_) async => bytes, name: fileName);
+      await Printing.layoutPdf(
+        onLayout: (_) async => bytes,
+        name: fileName,
+      );
+      return;
     }
+    await Printing.sharePdf(bytes: bytes, filename: fileName);
   } catch (_) {
     await Printing.sharePdf(bytes: bytes, filename: fileName);
   }
@@ -29,10 +33,10 @@ Future<void> previewPropertySeizurePdf(
 Future<Uint8List> generatePropertySeizurePdf(Map<String, dynamic> doc) async {
   final pdf = pw.Document();
 
-  // Load fonts
-  final loraRegular = await PdfGoogleFonts.loraRegular();
-  final loraBold = await PdfGoogleFonts.loraBold();
-  final devanagariRegular = await PdfGoogleFonts.notoSansDevanagariRegular();
+  // Load fonts from static cache
+  final loraRegular = await PdfUnicodeFonts.loraRegular();
+  final loraBold = await PdfUnicodeFonts.loraBold();
+  final devanagariRegular = await PdfUnicodeFonts.devanagariRegular();
 
   // Pre-render Marathi text blocks to cache as images to resolve Indic shaping issues
   final cache = await _preRenderAllMarathi(doc);

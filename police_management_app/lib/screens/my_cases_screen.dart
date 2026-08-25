@@ -40,6 +40,47 @@ class _MyCasesScreenState extends State<MyCasesScreen> {
   final _firestore = FirestoreService();
   late int _selectedTabIndex;
 
+  String? _cachedStreamKey;
+  Stream<List<ModuleRecord>>? _cachedActiveStream;
+  Stream<List<ModuleRecord>>? _cachedPendingStream;
+  Stream<List<ModuleRecord>>? _cachedClosedStream;
+
+  void _ensureStreams(AuthProvider auth, CaseVisibilityMode mode) {
+    final key = '${auth.activeStation}|${mode.name}|${auth.uid}|${auth.displayName}';
+    if (_cachedStreamKey == key && _cachedActiveStream != null) return;
+    _cachedStreamKey = key;
+
+    _cachedActiveStream = _firestore
+        .getStationCasesStream(auth.activeStation)
+        .map((records) => CaseVisibility.filterRecords(
+              records,
+              uid: auth.uid,
+              officerName: auth.displayName,
+              mode: mode,
+            ))
+        .asBroadcastStream();
+
+    _cachedPendingStream = _firestore
+        .getPendingCasesStream(auth.activeStation)
+        .map((records) => CaseVisibility.filterRecords(
+              records,
+              uid: auth.uid,
+              officerName: auth.displayName,
+              mode: mode,
+            ))
+        .asBroadcastStream();
+
+    _cachedClosedStream = _firestore
+        .getDisposalCasesStream(auth.activeStation)
+        .map((records) => CaseVisibility.filterRecords(
+              records,
+              uid: auth.uid,
+              officerName: auth.displayName,
+              mode: mode,
+            ))
+        .asBroadcastStream();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -52,6 +93,8 @@ class _MyCasesScreenState extends State<MyCasesScreen> {
     final mode = CaseVisibility.resolveFor(auth);
     final stationWide = mode == CaseVisibilityMode.stationWide;
     final title = stationWide ? 'Station Cases' : 'My Assigned Cases';
+
+    _ensureStreams(auth, mode);
 
     return Scaffold(
       backgroundColor: AppColors.lightBg,
@@ -86,7 +129,7 @@ class _MyCasesScreenState extends State<MyCasesScreen> {
               index: _selectedTabIndex,
               children: [
                 _VisibilityCasesTab(
-                  stream: _activeStream(auth, mode),
+                  stream: _cachedActiveStream!,
                   emptyMessage: stationWide
                       ? 'No active cases for this station.'
                       : 'No active cases assigned to you.',
@@ -96,7 +139,7 @@ class _MyCasesScreenState extends State<MyCasesScreen> {
                   listKind: _CaseListKind.active,
                 ),
                 _VisibilityCasesTab(
-                  stream: _pendingStream(auth, mode),
+                  stream: _cachedPendingStream!,
                   emptyMessage: stationWide
                       ? 'No pending cases for this station.'
                       : 'No pending cases assigned to you.',
@@ -104,7 +147,7 @@ class _MyCasesScreenState extends State<MyCasesScreen> {
                   listKind: _CaseListKind.pending,
                 ),
                 _VisibilityCasesTab(
-                  stream: _closedStream(auth, mode),
+                  stream: _cachedClosedStream!,
                   emptyMessage: stationWide
                       ? 'No disposal cases for this station.'
                       : 'No disposal cases assigned to you.',
@@ -266,48 +309,6 @@ class _MyCasesScreenState extends State<MyCasesScreen> {
         ),
       ),
     );
-  }
-
-  Stream<List<ModuleRecord>> _activeStream(
-    AuthProvider auth,
-    CaseVisibilityMode mode,
-  ) {
-    return _firestore.getStationCasesStream(auth.activeStation).map(
-          (records) => CaseVisibility.filterRecords(
-            records,
-            uid: auth.uid,
-            officerName: auth.displayName,
-            mode: mode,
-          ),
-        );
-  }
-
-  Stream<List<ModuleRecord>> _pendingStream(
-    AuthProvider auth,
-    CaseVisibilityMode mode,
-  ) {
-    return _firestore.getPendingCasesStream(auth.activeStation).map(
-          (records) => CaseVisibility.filterRecords(
-            records,
-            uid: auth.uid,
-            officerName: auth.displayName,
-            mode: mode,
-          ),
-        );
-  }
-
-  Stream<List<ModuleRecord>> _closedStream(
-    AuthProvider auth,
-    CaseVisibilityMode mode,
-  ) {
-    return _firestore.getDisposalCasesStream(auth.activeStation).map(
-          (records) => CaseVisibility.filterRecords(
-            records,
-            uid: auth.uid,
-            officerName: auth.displayName,
-            mode: mode,
-          ),
-        );
   }
 }
 
@@ -573,26 +574,22 @@ class _VisibilityCasesTabState extends State<_VisibilityCasesTab> {
                   ),
                 )
               else
-                SliverToBoxAdapter(
-                  child: Align(
-                    alignment: Alignment.topCenter,
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 820),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.md,
-                          0,
-                          AppSpacing.md,
-                          AppSpacing.xl,
-                        ),
-                        child: ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: cases.length,
-                          itemBuilder: (context, index) => _CaseCard(
-                            record: cases[index],
-                            listKind: widget.listKind,
-                          ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    0,
+                    AppSpacing.md,
+                    AppSpacing.xl,
+                  ),
+                  sliver: SliverList.builder(
+                    itemCount: cases.length,
+                    itemBuilder: (context, index) => Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 820),
+                        child: _CaseCard(
+                          key: ValueKey(cases[index].id),
+                          record: cases[index],
+                          listKind: widget.listKind,
                         ),
                       ),
                     ),
@@ -659,12 +656,15 @@ class _SearchField extends StatelessWidget {
 
 class _CaseCard extends StatefulWidget {
   const _CaseCard({
+    super.key,
     required this.record,
     required this.listKind,
   });
 
   final ModuleRecord record;
   final _CaseListKind listKind;
+
+  static final DateFormat _createdDateFormatter = DateFormat('dd MMM yyyy');
 
   @override
   State<_CaseCard> createState() => _CaseCardState();
@@ -713,6 +713,10 @@ class _CaseCardState extends State<_CaseCard> {
         ? widget.record.caseNumber.trim()
         : 'No FIR / case number';
 
+    final borderColor = _isHovered
+        ? AppColors.navyMid.withValues(alpha: 0.3)
+        : AppColors.lightBorder;
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
@@ -722,10 +726,11 @@ class _CaseCardState extends State<_CaseCard> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(
-            color: _isHovered
-                ? AppColors.navyMid.withValues(alpha: 0.3)
-                : AppColors.lightBorder,
+          border: Border(
+            left: BorderSide(color: accent, width: 4),
+            top: BorderSide(color: borderColor),
+            right: BorderSide(color: borderColor),
+            bottom: BorderSide(color: borderColor),
           ),
           boxShadow: [
             BoxShadow(
@@ -740,162 +745,144 @@ class _CaseCardState extends State<_CaseCard> {
           child: InkWell(
             borderRadius: BorderRadius.circular(AppRadius.md),
             onTap: () => _openCaseDetail(context),
-            child: IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 4,
-                    decoration: BoxDecoration(
-                      color: accent,
-                      borderRadius: const BorderRadius.horizontal(
-                        left: Radius.circular(AppRadius.md),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.navyMid.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          firLabel,
+                          style: GoogleFonts.poppins(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.navyMid,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 3,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.navyMid.withValues(alpha: 0.08),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  firLabel,
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.navyMid,
-                                  ),
-                                ),
-                              ),
-                              const Spacer(),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2.5,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: statusColor.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(AppRadius.full),
-                                  border: Border.all(
-                                    color: statusColor.withValues(alpha: 0.25),
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Container(
-                                      width: 5,
-                                      height: 5,
-                                      decoration: BoxDecoration(
-                                        color: statusColor,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      displayStatus,
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w600,
-                                        color: statusColor,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2.5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: statusColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(AppRadius.full),
+                          border: Border.all(
+                            color: statusColor.withValues(alpha: 0.25),
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            displayTitle,
-                            style: GoogleFonts.poppins(
-                              fontSize: 14.5,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.navyDark,
-                              height: 1.3,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (widget.record.firestoreCategoryDisplayName.isNotEmpty) ...[
-                            const SizedBox(height: 6),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 7,
-                                vertical: 2,
-                              ),
+                              width: 5,
+                              height: 5,
                               decoration: BoxDecoration(
-                                color: AppColors.goldPrimary.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(4),
+                                color: statusColor,
+                                shape: BoxShape.circle,
                               ),
-                              child: Text(
-                                widget.record.firestoreCategoryDisplayName,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.goldDark,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              displayStatus,
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: statusColor,
                               ),
                             ),
                           ],
-                          const SizedBox(height: 10),
-                          Wrap(
-                            spacing: 12,
-                            runSpacing: 4,
-                            children: [
-                              _MetaChip(
-                                icon: Icons.calendar_today_rounded,
-                                label: DateFormat('dd MMM yyyy')
-                                    .format(widget.record.createdAt),
-                              ),
-                              if (widget.record.location.trim().isNotEmpty)
-                                _MetaChip(
-                                  icon: Icons.location_on_outlined,
-                                  label: widget.record.location.trim(),
-                                ),
-                              if (widget.record.assignedOfficer.trim().isNotEmpty)
-                                _MetaChip(
-                                  icon: Icons.person_outline_rounded,
-                                  label: widget.record.assignedOfficer.trim(),
-                                ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Text(
-                                'Tap to view details',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.navyMid,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              const Icon(
-                                Icons.arrow_forward_ios_rounded,
-                                size: 10,
-                                color: AppColors.navyMid,
-                              ),
-                            ],
-                          ),
-                        ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    displayTitle,
+                    style: GoogleFonts.poppins(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.navyDark,
+                      height: 1.3,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (widget.record.firestoreCategoryDisplayName.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.goldPrimary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        widget.record.firestoreCategoryDisplayName,
+                        style: GoogleFonts.poppins(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.goldDark,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                  ],
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 4,
+                    children: [
+                      _MetaChip(
+                        icon: Icons.calendar_today_rounded,
+                        label: _CaseCard._createdDateFormatter
+                            .format(widget.record.createdAt),
+                      ),
+                      if (widget.record.location.trim().isNotEmpty)
+                        _MetaChip(
+                          icon: Icons.location_on_outlined,
+                          label: widget.record.location.trim(),
+                        ),
+                      if (widget.record.assignedOfficer.trim().isNotEmpty)
+                        _MetaChip(
+                          icon: Icons.person_outline_rounded,
+                          label: widget.record.assignedOfficer.trim(),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Text(
+                        'Tap to view details',
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.navyMid,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 10,
+                        color: AppColors.navyMid,
+                      ),
+                    ],
                   ),
                 ],
               ),

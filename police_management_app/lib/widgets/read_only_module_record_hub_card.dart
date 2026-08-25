@@ -14,6 +14,8 @@ import '../utils/module_pdf_helper.dart';
 class ReadOnlyModuleRecordHubCard extends StatelessWidget {
   final ModuleRecord record;
 
+  static final DateFormat _dateFormat = DateFormat('dd MMM yyyy');
+
   const ReadOnlyModuleRecordHubCard({super.key, required this.record});
 
   Color _statusColor(String status) {
@@ -161,7 +163,7 @@ class ReadOnlyModuleRecordHubCard extends StatelessWidget {
                 Icon(Icons.calendar_today_rounded,
                     size: 13, color: AppColors.lightSubText),
                 const SizedBox(width: 4),
-                Text(DateFormat('dd MMM yyyy').format(record.incidentDate),
+                Text(_dateFormat.format(record.incidentDate),
                     style: GoogleFonts.poppins(
                         fontSize: 11, color: AppColors.lightSubText)),
               ]),

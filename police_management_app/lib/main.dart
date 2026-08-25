@@ -20,6 +20,7 @@ import 'l10n/app_localizations.dart';
 import 'theme/app_theme.dart';
 import 'utils/app_constants.dart';
 import 'utils/pdf_auth_gate.dart';
+import 'utils/pdf_unicode_fonts.dart';
 import 'utils/notification_service.dart';
 import 'services/fcm_service.dart';
 import 'providers/notification_provider.dart';
@@ -144,6 +145,9 @@ void main() async {
       child: const PoliceMgmtApp(),
     ),
   );
+
+  // Preload PDF typography in the background so PDF generation is instant (<100ms)
+  PdfUnicodeFonts.prefetch();
 }
 
 class PoliceMgmtApp extends StatefulWidget {
@@ -354,7 +358,6 @@ class _PoliceMgmtAppState extends State<PoliceMgmtApp>
       // else → show Login (fresh install)
       home: _buildHome(auth),
       builder: (context, child) {
-        final settings = context.watch<SettingsProvider>();
         // User interaction ping for inactivity timer + global font scaler.
         return MediaQuery(
           data: MediaQuery.of(context).copyWith(
@@ -363,8 +366,6 @@ class _PoliceMgmtAppState extends State<PoliceMgmtApp>
           child: Listener(
             behavior: HitTestBehavior.translucent,
             onPointerDown: (_) =>
-                context.read<AuthProvider>().onUserInteraction(),
-            onPointerMove: (_) =>
                 context.read<AuthProvider>().onUserInteraction(),
             onPointerSignal: (_) =>
                 context.read<AuthProvider>().onUserInteraction(),

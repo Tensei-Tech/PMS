@@ -227,6 +227,7 @@ class _ClassificationListScreenState extends State<ClassificationListScreen> {
                       final c = filtered[i];
                       final statusColor = c['statusColor'] as Color;
                       return Container(
+                        key: ValueKey(c['id'] ?? '$i-${c['title']}'),
                         margin: const EdgeInsets.only(bottom: 10),
                         decoration: BoxDecoration(
                           color: Colors.white,

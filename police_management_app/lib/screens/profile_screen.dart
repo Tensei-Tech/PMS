@@ -175,6 +175,8 @@ class ProfileScreen extends StatelessWidget {
                               ? Image.network(
                                   auth.profilePhoto,
                                   fit: BoxFit.cover,
+                                  cacheWidth: 200,
+                                  cacheHeight: 200,
                                   errorBuilder: (ctx, err, stack) =>
                                       _buildAvatarInitial(initial),
                                 )
