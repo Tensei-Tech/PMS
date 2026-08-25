@@ -54,7 +54,6 @@ import 'common_form_screen.dart';
 import '../utils/common_form_module.dart';
 import '../utils/universal_search.dart';
 import '../widgets/voice_search_dialog.dart';
-import '../widgets/officer_sos_dialog.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/bell_icon_widget.dart';
 import '../widgets/dashboard_stats_widget.dart';
@@ -2506,98 +2505,7 @@ class _HomeTabState extends State<_HomeTab> {
     );
   }
 
-  /// Emergency Distress SOS Card for on-duty field officers
-  Widget _buildOfficerSosTrigger() {
-    final auth = widget.auth;
-    return Material(
-      elevation: 2,
-      shadowColor: Colors.redAccent.withValues(alpha: 0.25),
-      borderRadius: BorderRadius.circular(AppRadius.lg),
-      color: const Color(0xFF1E293B),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        onTap: () {
-          OfficerSosDialog.show(
-            context,
-            officerName: auth.displayName.isNotEmpty ? auth.displayName : 'Officer',
-            sevaNumber: auth.sevaNumber.isNotEmpty ? auth.sevaNumber : 'SEVA-OFFICER',
-            designation: auth.designation.isNotEmpty ? auth.designation : 'IO',
-            stationName: auth.stationName.isNotEmpty ? auth.stationName : 'HQ / Field',
-            contactNumber: auth.contactNumber.isNotEmpty ? auth.contactNumber : 'N/A',
-          );
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(color: Colors.redAccent.withValues(alpha: 0.4), width: 1.2),
-            gradient: const LinearGradient(
-              colors: [Color(0xFF2A080C), Color(0xFF1E293B)],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.redAccent.withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.redAccent, width: 1.5),
-                ),
-                child: const Icon(Icons.emergency_rounded, color: Colors.redAccent, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          'FIELD OFFICER SOS',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.redAccent.shade100,
-                            letterSpacing: 0.8,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                          decoration: BoxDecoration(
-                            color: Colors.redAccent,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Text(
-                            'LIVE GPS',
-                            style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Tap to broadcast instant emergency distress alert to Control Room',
-                      style: GoogleFonts.poppins(
-                        fontSize: 10,
-                        color: Colors.grey.shade400,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 14),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+
 
   String _moduleDisplayLabel(ModuleRecord record) {
     final name = record.firestoreCategoryDisplayName.trim();
@@ -2834,8 +2742,6 @@ class _HomeTabState extends State<_HomeTab> {
               _buildNewsCarousel(newsProvider, isWide),
               const SizedBox(height: AppSpacing.md),
               _buildCaseVisibilityBanner(),
-              const SizedBox(height: AppSpacing.sm),
-              _buildOfficerSosTrigger(),
               const SizedBox(height: AppSpacing.md),
               DashboardStatsWidget(auth: widget.auth),
               const SizedBox(height: AppSpacing.lg),
