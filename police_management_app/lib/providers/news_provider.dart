@@ -197,6 +197,7 @@ class NewsProvider extends ChangeNotifier {
           FirebaseFirestore.instance.collection('app_announcements');
       _subscription = collection
           .orderBy('order')
+          .limit(10)
           .snapshots()
           .listen(
             (snapshot) {

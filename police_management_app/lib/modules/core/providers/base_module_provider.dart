@@ -15,7 +15,20 @@ class BaseModuleProvider extends ChangeNotifier {
   String _uid = '';
   CaseVisibilityMode _visibilityMode = CaseVisibilityMode.ownCasesOnly;
 
+  /// Debounce timer — collapses rapid-fire notifyListeners() calls from 35
+  /// providers updating simultaneously (e.g. station switch) into a single
+  /// notification, reducing cascading rebuilds from 35→1.
+  Timer? _notifyDebounce;
+
   BaseModuleProvider(this.moduleKey);
+
+  /// Debounced notify — coalesces calls within 30ms into one rebuild.
+  void _scheduleNotify() {
+    _notifyDebounce?.cancel();
+    _notifyDebounce = Timer(const Duration(milliseconds: 30), () {
+      notifyListeners();
+    });
+  }
 
   void setStationContext({
     required String stationId,
@@ -35,7 +48,7 @@ class BaseModuleProvider extends ChangeNotifier {
 
     if (stationId.isEmpty) {
       _records = [];
-      notifyListeners();
+      _scheduleNotify();
       return;
     }
 
@@ -72,6 +85,7 @@ class BaseModuleProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _notifyDebounce?.cancel();
     _sub?.cancel();
     super.dispose();
   }

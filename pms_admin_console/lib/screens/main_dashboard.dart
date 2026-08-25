@@ -533,6 +533,7 @@ class _MainDashboardState extends State<MainDashboard> {
                   ),
                 ),
                 // Main Content Body
+                // Only render active tab content to prevent background listeners from consuming reads
                 Expanded(
                   child: Container(
                     color: theme.scaffoldBackgroundColor,

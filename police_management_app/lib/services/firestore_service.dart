@@ -37,10 +37,18 @@ class FirestoreService {
     await _db.collection(colUsers).doc(uid).update({field: value});
   }
 
+  static final Map<String, UserModel> _userCache = {};
+
   Future<UserModel?> getUser(String uid) async {
+    if (uid.isEmpty) return null;
+    if (_userCache.containsKey(uid)) {
+      return _userCache[uid];
+    }
     final doc = await _db.collection(colUsers).doc(uid).get();
     if (!doc.exists) return null;
-    return UserModel.fromMap(doc.data()!, doc.id);
+    final user = UserModel.fromMap(doc.data()!, doc.id);
+    _userCache[uid] = user;
+    return user;
   }
 
   /// Real-time profile updates (grant toggles, admin posting changes, etc.).
@@ -67,9 +75,11 @@ class FirestoreService {
       final batch = _db.batch();
       final caseRef = _db.collection(colCases).doc(record.id);
 
-      // ✅ DEBUG — remove after confirmed working
-      debugPrint(
-          '>>> stationName: "${record.stationName}" | createdBy: "${record.createdBy}" | isCreate: $isCreate');
+      // ✅ DEBUG — guard with kDebugMode
+      if (kDebugMode) {
+        debugPrint(
+            '>>> stationName: "${record.stationName}" | createdBy: "${record.createdBy}" | isCreate: $isCreate');
+      }
 
       if (record.stationName.isEmpty || record.createdBy.isEmpty) {
         throw Exception(
@@ -160,6 +170,7 @@ class FirestoreService {
         .collection(colCases)
         .where('moduleKey', isEqualTo: moduleKey)
         .where('stationName', isEqualTo: stationId)
+        .limit(100)
         .snapshots()
         .map((snapshot) {
       final records = snapshot.docs
@@ -202,6 +213,7 @@ class FirestoreService {
     return _db
         .collection(colCases)
         .where('assignedOfficerUid', isEqualTo: officerUid.trim())
+        .limit(100)
         .snapshots()
         .map((snapshot) {
       final records = snapshot.docs
@@ -254,6 +266,7 @@ class FirestoreService {
         subCases = _db
             .collection(colCases)
             .where('stationName', isEqualTo: stationId)
+            .limit(100)
             .snapshots()
             .listen((snap) {
           casesMap.clear();
@@ -270,6 +283,7 @@ class FirestoreService {
         subPending = _db
             .collection(colPending)
             .where('stationName', isEqualTo: stationId)
+            .limit(100)
             .snapshots()
             .listen((snap) {
           pendingMap.clear();
@@ -286,6 +300,7 @@ class FirestoreService {
         subDisposal = _db
             .collection(colDisposal)
             .where('stationName', isEqualTo: stationId)
+            .limit(100)
             .snapshots()
             .listen((snap) {
           disposalMap.clear();
@@ -316,6 +331,7 @@ class FirestoreService {
     return _db
         .collection(colPending)
         .where('stationName', isEqualTo: stationId)
+        .limit(100)
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => ModuleRecord.fromMap(doc.data(), doc.id))
@@ -350,6 +366,7 @@ class FirestoreService {
     return _db
         .collection(colDisposal)
         .where('stationName', isEqualTo: stationId)
+        .limit(100)
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => ModuleRecord.fromMap(doc.data(), doc.id))
@@ -712,9 +729,12 @@ class FirestoreService {
   }
 
   Stream<List<Map<String, dynamic>>> getIoRemindersStream(String ioUid) {
+    if (ioUid.trim().isEmpty) return Stream.value(const []);
     return _db
         .collection(colCases)
         .where('hasActiveReminder', isEqualTo: true)
+        .where('activeReminder.ioUid', isEqualTo: ioUid.trim())
+        .limit(50)
         .snapshots()
         .map((snap) => snap.docs
             .map((d) => d.data()['activeReminder'] as Map<String, dynamic>?)
@@ -724,9 +744,12 @@ class FirestoreService {
   }
 
   Stream<List<Map<String, dynamic>>> getStationRemindersStream(String stationName) {
+    if (stationName.trim().isEmpty) return Stream.value(const []);
     return _db
         .collection(colCases)
+        .where('stationName', isEqualTo: stationName.trim())
         .where('hasActiveReminder', isEqualTo: true)
+        .limit(50)
         .snapshots()
         .map((snap) => snap.docs
             .map((d) => d.data()['activeReminder'] as Map<String, dynamic>?)
@@ -736,9 +759,12 @@ class FirestoreService {
   }
 
   Stream<List<Map<String, dynamic>>> getSentRemindersStream(String sentByUid) {
+    if (sentByUid.trim().isEmpty) return Stream.value(const []);
     return _db
         .collection(colCases)
         .where('hasActiveReminder', isEqualTo: true)
+        .where('activeReminder.sentByUid', isEqualTo: sentByUid.trim())
+        .limit(50)
         .snapshots()
         .map((snap) => snap.docs
             .map((d) => d.data()['activeReminder'] as Map<String, dynamic>?)
@@ -751,6 +777,7 @@ class FirestoreService {
     return _db
         .collection(colCases)
         .where('hasActiveReminder', isEqualTo: true)
+        .limit(50)
         .snapshots()
         .map((snap) => snap.docs
             .map((d) => d.data()['activeReminder'] as Map<String, dynamic>?)

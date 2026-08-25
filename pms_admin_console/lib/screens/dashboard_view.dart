@@ -232,6 +232,7 @@ class _DashboardViewState extends State<DashboardView> {
       subtitle: 'Active in past 30 days',
       stream: FirebaseFirestore.instance
           .collection('users')
+          .limit(500)
           .snapshots(),
       countMapper: (snapshot) {
         int activePastThirtyDays = 0;
@@ -275,6 +276,8 @@ class _DashboardViewState extends State<DashboardView> {
       subtitle: 'Requires Master Admin action',
       stream: FirebaseFirestore.instance
           .collection('users')
+          .where('accountStatus', isEqualTo: 'pending_approval')
+          .limit(200)
           .snapshots(),
       countMapper: (snapshot) {
         int pendingCount = 0;
@@ -300,7 +303,7 @@ class _DashboardViewState extends State<DashboardView> {
     return _StreamStatCard(
       title: 'Total Stations',
       subtitle: 'Filter by State & District',
-      stream: FirebaseFirestore.instance.collection('users').snapshots(),
+      stream: FirebaseFirestore.instance.collection('users').limit(500).snapshots(),
       countMapper: (snapshot) {
         final Set<String> uniqueStations = {};
         for (final doc in snapshot.docs) {
@@ -324,7 +327,7 @@ class _DashboardViewState extends State<DashboardView> {
     return _StreamStatCard(
       title: 'Pending Cases',
       subtitle: 'Awaiting chargesheet / CC number',
-      stream: FirebaseFirestore.instance.collection('cases').snapshots(),
+      stream: FirebaseFirestore.instance.collection('cases').limit(500).snapshots(),
       countMapper: (snapshot) {
         int pendingCount = 0;
         for (final doc in snapshot.docs) {
@@ -347,7 +350,7 @@ class _DashboardViewState extends State<DashboardView> {
     return _StreamStatCard(
       title: 'Disposed Cases',
       subtitle: 'Chargesheet filed & completed',
-      stream: FirebaseFirestore.instance.collection('cases').snapshots(),
+      stream: FirebaseFirestore.instance.collection('cases').limit(500).snapshots(),
       countMapper: (snapshot) {
         int disposedCount = 0;
         for (final doc in snapshot.docs) {
