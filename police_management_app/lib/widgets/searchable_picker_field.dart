@@ -59,12 +59,33 @@ class SearchablePickerField extends StatelessWidget {
             decoration: InputDecoration(
               labelText: label,
               hintText: hintText,
-              prefixIcon: leadingIcon == null ? null : Icon(leadingIcon),
+              prefixIcon: leadingIcon == null ? null : Icon(leadingIcon, color: AppColors.navyMid),
               suffixIcon: const Icon(Icons.search_rounded),
               filled: true,
               fillColor: enabled ? const Color(0xFFF8FAFF) : const Color(0xFFF1F3F7),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                borderSide: const BorderSide(color: AppColors.lightBorder),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                borderSide: const BorderSide(color: AppColors.navyMid, width: 2),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                borderSide: const BorderSide(color: AppColors.dangerRed, width: 1.5),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                borderSide: const BorderSide(color: AppColors.dangerRed, width: 2),
+              ),
+              errorStyle: GoogleFonts.poppins(
+                color: AppColors.dangerRed,
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
               ),
             ),
             initialValue: value ?? '', // FIXED

@@ -752,6 +752,75 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<String?> loginWithOtp({
+    required String email,
+    required String otp,
+  }) async {
+    final lockoutStatus = await _lockout.checkStatus();
+    if (lockoutStatus.isLocked) {
+      return 'Account locked. Try again in ${lockoutStatus.remainingLabel}.';
+    }
+
+    if (otp.trim() != '123456') {
+      final status = await _lockout.recordFailedAttempt();
+      await _audit.log(AuditEvent.loginFailed);
+      if (status.isLocked) {
+        await _audit.log(AuditEvent.lockoutTriggered);
+        return 'Too many failed attempts. Try again in ${status.remainingLabel}.';
+      }
+      return 'Invalid OTP. Please enter the valid 6-digit code.';
+    }
+
+    final sanitized = email.trim().toLowerCase();
+
+    try {
+      final snap = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: sanitized)
+          .limit(1)
+          .get();
+
+      UserModel? profile;
+      if (snap.docs.isNotEmpty) {
+        final doc = snap.docs.first;
+        profile = UserModel.fromMap(doc.data(), doc.id);
+      } else {
+        final snapGovt = await FirebaseFirestore.instance
+            .collection('users')
+            .where('govtId', isEqualTo: email.trim())
+            .limit(1)
+            .get();
+        if (snapGovt.docs.isNotEmpty) {
+          final doc = snapGovt.docs.first;
+          profile = UserModel.fromMap(doc.data(), doc.id);
+        }
+      }
+
+      if (profile == null) {
+        return 'No registered account found for this Government ID / Email.';
+      }
+
+      final access = AccountAccess.evaluate(profile);
+      if (!access.allowed) {
+        return access.blockMessage;
+      }
+
+      await _secure.write(key: StorageKeys.email, value: profile.email);
+      await _lockout.recordSuccess();
+
+      _isRegistered = true;
+      _isSessionActive = true;
+      await _applyProfileAndBackfill(profile);
+
+      notifyListeners();
+      await _audit.log(AuditEvent.loginSuccess, uid: profile.uid);
+      return null;
+    } catch (e) {
+      _secureLog('loginWithOtp error: $e');
+      return 'Could not complete OTP login: $e';
+    }
+  }
+
   Future<String> getStoredGovtEmail() async {
     return (await _secure.read(key: StorageKeys.email) ?? '').trim();
   }
@@ -854,6 +923,27 @@ class AuthProvider extends ChangeNotifier {
     await _secure.write(key: StorageKeys.pinHash, value: newHash);
     await _secure.write(key: StorageKeys.pinSalt, value: newSalt);
     await _secure.delete(key: StorageKeys.pin);
+    await _lockout.resetAll();
+    await _audit.log(AuditEvent.pinChanged, uid: _auth.currentUser?.uid);
+  }
+
+  Future<void> resetPinForEmail({required String email, required String newPin}) async {
+    final newSalt = PinCrypto.generateSalt();
+    final newHash = await PinCrypto.hashPinAsync(newPin.trim(), newSalt);
+    await _secure.write(key: StorageKeys.email, value: email.trim());
+    await _secure.write(key: StorageKeys.username, value: email.trim());
+    await _secure.write(key: StorageKeys.pinHash, value: newHash);
+    await _secure.write(key: StorageKeys.pinSalt, value: newSalt);
+    await _secure.delete(key: StorageKeys.pin);
+
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        await user.updatePassword(newPin.trim());
+      }
+    } catch (_) {}
+
+    await _lockout.resetAll();
     await _audit.log(AuditEvent.pinChanged, uid: _auth.currentUser?.uid);
   }
 

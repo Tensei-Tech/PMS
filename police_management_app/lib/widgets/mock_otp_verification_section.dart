@@ -1,13 +1,15 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../theme/app_theme.dart';
 
-/// Mock OTP verification used across Register and Forgot PIN pages.
+/// Modern, compact OTP verification component used across Register and Forgot PIN pages.
 ///
-/// - Does NOT call any paid/third-party OTP provider.
-/// - In dev mode it always verifies against `123456`.
+/// - High-density single-row layout to prevent UI stretching.
+/// - In dev mode, automatically fills the test OTP `123456`.
 class MockOtpVerificationSection extends StatefulWidget {
   const MockOtpVerificationSection({
     super.key,
@@ -27,7 +29,8 @@ class MockOtpVerificationSection extends StatefulWidget {
       _MockOtpVerificationSectionState();
 }
 
-class _MockOtpVerificationSectionState extends State<MockOtpVerificationSection> {
+class _MockOtpVerificationSectionState
+    extends State<MockOtpVerificationSection> {
   static const _mockOtp = '123456';
   static const _resendSeconds = 60;
 
@@ -71,8 +74,8 @@ class _MockOtpVerificationSectionState extends State<MockOtpVerificationSection>
     widget.onVerifiedChanged(false);
     _startTimer();
 
-    // For developer convenience: auto-fill mock OTP.
-    Future.delayed(const Duration(milliseconds: 250), () {
+    // Auto-fill mock OTP for smooth developer testing.
+    Future.delayed(const Duration(milliseconds: 100), () {
       if (!mounted) return;
       setState(() => _otpCtrl.text = _mockOtp);
     });
@@ -86,7 +89,7 @@ class _MockOtpVerificationSectionState extends State<MockOtpVerificationSection>
       return;
     }
     if (value != _mockOtp) {
-      setState(() => _error = 'Invalid OTP. Please try again.');
+      setState(() => _error = 'Invalid OTP. Please enter 123456.');
       widget.onVerifiedChanged(false);
       return;
     }
@@ -99,125 +102,251 @@ class _MockOtpVerificationSectionState extends State<MockOtpVerificationSection>
 
   @override
   Widget build(BuildContext context) {
-    final disabled = !widget.enabled;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Major section header
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(widget.title,
-                      style: GoogleFonts.poppins(
-                          fontSize: 14, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 2),
-                  Text(widget.subtitle,
-                      style: GoogleFonts.poppins(
-                          fontSize: 12, color: Colors.black54)),
-                ],
-              ),
-            ),
-            if (_verified)
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.successGreen.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(99),
-                  border: Border.all(
-                      color: AppColors.successGreen.withValues(alpha: 0.4)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+    final bool disabled = !widget.enabled;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: _verified
+            ? AppColors.successGreen.withValues(alpha: 0.05)
+            : const Color(0xFFF8FAFF),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(
+          color: _verified
+              ? AppColors.successGreen.withValues(alpha: 0.3)
+              : AppColors.lightBorder,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header Row: Section Label + Status Badge
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.verified_rounded,
-                        color: AppColors.successGreen, size: 16),
-                    const SizedBox(width: 6),
-                    Text('Verified',
-                        style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.successGreen)),
+                    Text(
+                      widget.title,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.navyDark,
+                      ),
+                    ),
+                    Text(
+                      _verified ? 'OTP verified successfully' : widget.subtitle,
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        color: _verified
+                            ? AppColors.successGreen
+                            : AppColors.lightSubText,
+                      ),
+                    ),
                   ],
                 ),
               ),
-          ],
-        ),
-        const SizedBox(height: 10),
-
-        // Send/Resend OTP button row
-        Row(
-          children: [
-            Expanded(
-              child: ElevatedButton(
-                onPressed:
-                    disabled ? null : (_secondsLeft > 0 ? null : _sendOtp),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.navyMid,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.md)),
-                  elevation: 0,
+              if (_verified)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.successGreen.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: AppColors.successGreen.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.check_circle_rounded,
+                          color: AppColors.successGreen, size: 14),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Verified',
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.successGreen,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                child: Text(
-                  _otpSent ? 'Resend OTP' : 'Send OTP',
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            if (_otpSent)
-              Text(
-                _secondsLeft > 0 ? 'Resend in $_secondsLeft s' : 'You can resend now',
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: _secondsLeft > 0 ? Colors.black54 : AppColors.successGreen,
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 10),
-
-        if (_otpSent) ...[
-          TextField(
-            controller: _otpCtrl,
-            enabled: !disabled && !_verified,
-            keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(6),
             ],
-            decoration: InputDecoration(
-              labelText: 'Enter OTP',
-              hintText: '6-digit OTP',
-              errorText: _error,
-              filled: true,
-              fillColor: disabled ? const Color(0xFFF1F3F7) : const Color(0xFFF8FAFF),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.md),
-              ),
-            ),
           ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: (!disabled && !_verified) ? _verifyOtp : null,
-              style: OutlinedButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.md)),
-                side: const BorderSide(color: AppColors.navyMid),
+
+          // ── STATE 1: NOT VERIFIED YET ──────────────────────────────────────
+          if (!_verified) ...[
+            const SizedBox(height: 10),
+            if (!_otpSent) ...[
+              // Send OTP Compact Action
+              SizedBox(
+                height: 40,
+                child: ElevatedButton.icon(
+                  onPressed: disabled ? null : _sendOtp,
+                  icon: const Icon(Icons.send_rounded, size: 16),
+                  label: Text(
+                    'Send OTP',
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.navyMid,
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor:
+                        AppColors.navyMid.withValues(alpha: 0.2),
+                    disabledForegroundColor: AppColors.lightSubText,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.sm + 2),
+                    ),
+                  ),
+                ),
               ),
-              child: Text('Verify OTP',
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
-            ),
-          ),
+            ] else ...[
+              // Integrated OTP Input + Verify Button (Single Row)
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 44,
+                      child: TextField(
+                        controller: _otpCtrl,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(6),
+                        ],
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 4,
+                          color: AppColors.navyDark,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: '••••••',
+                          hintStyle: GoogleFonts.poppins(
+                            letterSpacing: 3,
+                            color:
+                                AppColors.lightSubText.withValues(alpha: 0.5),
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.lock_clock_rounded,
+                            color: AppColors.navyMid,
+                            size: 18,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.sm + 2),
+                            borderSide:
+                                const BorderSide(color: AppColors.lightBorder),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.sm + 2),
+                            borderSide:
+                                const BorderSide(color: AppColors.lightBorder),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.sm + 2),
+                            borderSide: const BorderSide(
+                                color: AppColors.navyMid, width: 2),
+                          ),
+                        ),
+                        onSubmitted: (_) => _verifyOtp(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    height: 44,
+                    child: ElevatedButton(
+                      onPressed: _verifyOtp,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.navyMid,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(horizontal: 18),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.sm + 2),
+                        ),
+                      ),
+                      child: Text(
+                        'Verify',
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              if (_error != null) ...[
+                const SizedBox(height: 6),
+                Text(
+                  _error!,
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.dangerRed,
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 8),
+
+              // Subtle Resend Footer
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _secondsLeft > 0
+                        ? 'Resend available in ${_secondsLeft}s'
+                        : 'Did not receive code?',
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      color: AppColors.lightSubText,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: _secondsLeft > 0 ? null : _sendOtp,
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 4, vertical: 2),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(
+                      'Resend OTP',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: _secondsLeft > 0
+                            ? AppColors.lightSubText
+                            : AppColors.navyMid,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
         ],
-      ],
+      ),
     );
   }
 }
-
