@@ -268,13 +268,14 @@ class AppTheme {
     return PageRouteBuilder<T>(
       pageBuilder: (context, animation, secondaryAnimation) => page,
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        const begin = Offset(0.0, 0.05);
+        const begin = Offset(0.0, 0.04);
         const end = Offset.zero;
         const curve = Curves.easeOutCubic;
         final tween =
             Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+        // easeOut: screen appears quickly at start — feels snappier than easeIn
         final fadeTween = Tween<double>(begin: 0.0, end: 1.0)
-            .chain(CurveTween(curve: Curves.easeIn));
+            .chain(CurveTween(curve: Curves.easeOut));
         return SlideTransition(
           position: animation.drive(tween),
           child: FadeTransition(
@@ -283,7 +284,8 @@ class AppTheme {
           ),
         );
       },
-      transitionDuration: const Duration(milliseconds: 350),
+      transitionDuration: const Duration(milliseconds: 220),
+      reverseTransitionDuration: const Duration(milliseconds: 180),
     );
   }
 }

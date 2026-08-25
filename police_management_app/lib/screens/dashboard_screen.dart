@@ -209,322 +209,98 @@ dynamic _dashboardTileIcon(String label, dynamic fallback) {
   }
 }
 
+const Map<String, (String, double)> _kGridSvgIcons = {
+  'i to v': ('assets/icons/1to5.svg', 1.5),
+  'vi': ('assets/icons/6.svg', 1.5),
+  'pending': ('assets/icons/pending.svg', 1.5),
+  'gambling': ('assets/icons/gambling.svg', 1.5),
+  'juvenile': ('assets/icons/juvenile.svg', 2.2),
+  'sandtheft': ('assets/icons/sandtheft.svg', 1.5),
+  'sand theft': ('assets/icons/sandtheft.svg', 1.5),
+  'undetected': ('assets/icons/undetected.svg', 1.5),
+  'hurt': ('assets/icons/hurt.svg', 1.5),
+  'kidnapping': ('assets/icons/kidnapping.svg', 1.5),
+  'missing': ('assets/icons/missing.svg', 2.1),
+  'n.c': ('assets/icons/nc.svg', 1.5),
+  'arrested': ('assets/icons/arrested.svg', 1.5),
+  'pocso': ('assets/icons/pocso.svg', 1.5),
+  'crime against women': ('assets/icons/crimewomen.svg', 2.2),
+  'victim': ('assets/icons/victim.svg', 2.2),
+  'a.d': ('assets/icons/ad.svg', 1.5),
+  'prohibition': ('assets/icons/prohibiton.svg', 1.5),
+  'theft': ('assets/icons/theft.svg', 1.5),
+  'two/four wheeler': ('assets/icons/2-4wheeler.svg', 1.5),
+  'sam/warrant': ('assets/icons/sam-warrants.svg', 2.2),
+  'muddemal': ('assets/icons/muddemal.svg', 1.5),
+  'rti': ('assets/icons/rti.svg', 1.5),
+  'passport/pvr': ('assets/icons/passport.svg', 2.2),
+  'passport/pvr/lic': ('assets/icons/passport.svg', 2.2),
+  'passport/ pvr/lic': ('assets/icons/passport.svg', 2.2),
+  'passport': ('assets/icons/passport.svg', 2.2),
+  'ndps': ('assets/icons/ndps.svg', 2.5),
+  'gowans': ('assets/icons/gowans.svg', 1.5),
+  'it act': ('assets/icons/itact.svg', 2.1),
+  'itact': ('assets/icons/itact.svg', 2.1),
+  'mcoca': ('assets/icons/macoca.svg', 2.1),
+  'macoca': ('assets/icons/macoca.svg', 2.1),
+  'uapa': ('assets/icons/uapa.svg', 2.1),
+  'mpda': ('assets/icons/mpda.svg', 1.5),
+  'coin': ('assets/icons/coin.svg', 2.1),
+  'mv act': ('assets/icons/mvact.svg', 1.5),
+  'm v act': ('assets/icons/mvact.svg', 1.5),
+  'mvact': ('assets/icons/mvact.svg', 1.5),
+  'm.v act': ('assets/icons/mvact.svg', 1.5),
+  'accident': ('assets/icons/accident.svg', 1.5),
+  'detected': ('assets/icons/detected.svg', 1.5),
+  'disposal': ('assets/icons/disposal.svg', 1.5),
+  'monthly': ('assets/icons/monthly.svg', 1.5),
+  'absconded': ('assets/icons/absconded.svg', 1.5),
+  'cctns': ('assets/icons/cctns.svg', 1.5),
+  'licence': ('assets/icons/licence.svg', 1.5),
+  'tadipar': ('assets/icons/tadipar.svg', 1.5),
+  'repeat offender': ('assets/icons/repeatoffender.svg', 1.5),
+  'repeatoffender': ('assets/icons/repeatoffender.svg', 1.5),
+  'dar': ('assets/icons/dar.svg', 1.5),
+  'irda': ('assets/icons/IRDA.svg', 1.5),
+  'itsso': ('assets/icons/itsso.svg', 1.5),
+};
+
+const Map<String, String> _kServiceSvgIcons = {
+  'tadipar': 'assets/icons/tadipar.svg',
+  'licence': 'assets/icons/licence.svg',
+  'mpda': 'assets/icons/mpda.svg',
+  'repeat offender': 'assets/icons/repeatoffender.svg',
+  'property recovery': 'assets/icons/muddemal.svg',
+  'passport/pvr': 'assets/icons/passport.svg',
+  'dar': 'assets/icons/dar.svg',
+  'irda': 'assets/icons/IRDA.svg',
+  'itsso': 'assets/icons/itsso.svg',
+  'cctns': 'assets/icons/cctns.svg',
+};
+
 Widget _buildGridIcon(
     String label, dynamic fallback, Color color, double size) {
   final labelTrim = label.replaceAll('\n', ' ').trim();
+  final key = labelTrim.toLowerCase();
 
-  if (labelTrim == 'I to V') {
+  final svgConfig = _kGridSvgIcons[key] ??
+      (key.contains('passport') ? ('assets/icons/passport.svg', 2.2) : null);
+
+  if (svgConfig != null) {
     return SvgPicture.asset(
-      'assets/icons/1to5.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'VI') {
-    return SvgPicture.asset(
-      'assets/icons/6.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'Pending') {
-    return SvgPicture.asset(
-      'assets/icons/pending.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'Gambling') {
-    return SvgPicture.asset(
-      'assets/icons/gambling.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'Juvenile') {
-    return SvgPicture.asset(
-      'assets/icons/juvenile.svg',
-      width: size * 2.2,
-      height: size * 2.2,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim.toLowerCase().replaceAll(' ', '') == 'sandtheft') {
-    return SvgPicture.asset(
-      'assets/icons/sandtheft.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'Undetected') {
-    return SvgPicture.asset(
-      'assets/icons/undetected.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'Hurt') {
-    return SvgPicture.asset(
-      'assets/icons/hurt.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'Kidnapping') {
-    return SvgPicture.asset(
-      'assets/icons/kidnapping.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'Missing') {
-    return SvgPicture.asset(
-      'assets/icons/missing.svg',
-      width: size * 2.1,
-      height: size * 2.1,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'N.C') {
-    return SvgPicture.asset(
-      'assets/icons/nc.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'Arrested') {
-    return SvgPicture.asset(
-      'assets/icons/arrested.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'POCSO') {
-    return SvgPicture.asset(
-      'assets/icons/pocso.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'Crime against Women') {
-    return SvgPicture.asset(
-      'assets/icons/crimewomen.svg',
-      width: size * 2.2,
-      height: size * 2.2,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'Victim') {
-    return SvgPicture.asset(
-      'assets/icons/victim.svg',
-      width: size * 2.2,
-      height: size * 2.2,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'A.D') {
-    return SvgPicture.asset(
-      'assets/icons/ad.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'Prohibition') {
-    return SvgPicture.asset(
-      'assets/icons/prohibiton.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'Theft') {
-    return SvgPicture.asset(
-      'assets/icons/theft.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'Two/Four Wheeler') {
-    return SvgPicture.asset(
-      'assets/icons/2-4wheeler.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'Sam/Warrant') {
-    return SvgPicture.asset(
-      'assets/icons/sam-warrants.svg',
-      width: size * 2.2,
-      height: size * 2.2,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'Muddemal') {
-    return SvgPicture.asset(
-      'assets/icons/muddemal.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'RTI') {
-    return SvgPicture.asset(
-      'assets/icons/rti.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'Passport/PVR' ||
-      labelTrim == 'Passport/PVR/Lic' ||
-      labelTrim.contains('Passport')) {
-    return SvgPicture.asset(
-      'assets/icons/passport.svg',
-      width: size * 2.2,
-      height: size * 2.2,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'NDPS') {
-    return SvgPicture.asset(
-      'assets/icons/ndps.svg',
-      width: size * 2.5,
-      height: size * 2.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'Gowans') {
-    return SvgPicture.asset(
-      'assets/icons/gowans.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'IT Act' || labelTrim == 'ITact') {
-    return SvgPicture.asset(
-      'assets/icons/itact.svg',
-      width: size * 2.1,
-      height: size * 2.1,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'MCOCA' || labelTrim == 'MACOCA') {
-    return SvgPicture.asset(
-      'assets/icons/macoca.svg',
-      width: size * 2.1,
-      height: size * 2.1,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'UAPA') {
-    return SvgPicture.asset(
-      'assets/icons/uapa.svg',
-      width: size * 2.1,
-      height: size * 2.1,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'MPDA') {
-    return SvgPicture.asset(
-      'assets/icons/mpda.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'COIN') {
-    return SvgPicture.asset(
-      'assets/icons/coin.svg',
-      width: size * 2.1,
-      height: size * 2.1,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'MV Act' ||
-      labelTrim == 'M V Act' ||
-      labelTrim == 'MVact' ||
-      labelTrim == 'M.V Act') {
-    return SvgPicture.asset(
-      'assets/icons/mvact.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'Accident') {
-    return SvgPicture.asset(
-      'assets/icons/accident.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'Detected') {
-    return SvgPicture.asset(
-      'assets/icons/detected.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'Disposal') {
-    return SvgPicture.asset(
-      'assets/icons/disposal.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'Monthly') {
-    return SvgPicture.asset(
-      'assets/icons/monthly.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'Absconded') {
-    return SvgPicture.asset(
-      'assets/icons/absconded.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'CCTNS') {
-    return SvgPicture.asset(
-      'assets/icons/cctns.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'Licence') {
-    return SvgPicture.asset(
-      'assets/icons/licence.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'Tadipar') {
-    return SvgPicture.asset(
-      'assets/icons/tadipar.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'Repeat Offender') {
-    return SvgPicture.asset(
-      'assets/icons/repeatoffender.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'DAR') {
-    return SvgPicture.asset(
-      'assets/icons/dar.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'IRDA') {
-    return SvgPicture.asset(
-      'assets/icons/IRDA.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'ITSSO') {
-    return SvgPicture.asset(
-      'assets/icons/itsso.svg',
-      width: size * 1.5,
-      height: size * 1.5,
+      svgConfig.$1,
+      width: size * svgConfig.$2,
+      height: size * svgConfig.$2,
       colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
     );
   }
+
   for (final tool in ServiceData.dashboardTools) {
     if (labelTrim == tool.label) {
       return _buildServiceIcon(labelTrim, tool.icon, color, size);
     }
   }
+
   final dynamic icon = _dashboardTileIcon(label, fallback);
   if (icon is IconData) return Icon(icon, color: color, size: size);
   return FaIcon(icon, color: color, size: size);
@@ -533,724 +309,27 @@ Widget _buildGridIcon(
 Widget _buildServiceIcon(
     String label, dynamic fallback, Color color, double size) {
   final labelTrim = label.replaceAll('\n', ' ').trim();
-  if (labelTrim == 'Tadipar') {
+  final key = labelTrim.toLowerCase();
+
+  final assetPath = _kServiceSvgIcons[key];
+  if (assetPath != null) {
     return SvgPicture.asset(
-      'assets/icons/tadipar.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'Licence') {
-    return SvgPicture.asset(
-      'assets/icons/licence.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'MPDA') {
-    return SvgPicture.asset(
-      'assets/icons/mpda.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'Repeat Offender') {
-    return SvgPicture.asset(
-      'assets/icons/repeatoffender.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'Property Recovery') {
-    return SvgPicture.asset(
-      'assets/icons/muddemal.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'Passport/PVR') {
-    return SvgPicture.asset(
-      'assets/icons/passport.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'DAR') {
-    return SvgPicture.asset(
-      'assets/icons/dar.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'IRDA') {
-    return SvgPicture.asset(
-      'assets/icons/IRDA.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'ITSSO') {
-    return SvgPicture.asset(
-      'assets/icons/itsso.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
-  } else if (labelTrim == 'CCTNS') {
-    return SvgPicture.asset(
-      'assets/icons/cctns.svg',
+      assetPath,
       width: size * 1.5,
       height: size * 1.5,
       colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
     );
   }
+
   if (fallback is IconData) return Icon(fallback, color: color, size: size);
   return FaIcon(fallback, color: color, size: size);
 }
 
-class CardsIconPainter extends CustomPainter {
-  final Color color;
-  CardsIconPainter({required this.color});
+// CustomPainter classes moved to lib/widgets/dashboard_icon_painters.dart
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
 
-    // Background card
-    canvas.save();
-    canvas.translate(w * 0.65, h * 0.45);
-    canvas.rotate(0.3);
-    final bgRect = RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset.zero, width: w * 0.55, height: h * 0.75),
-        const Radius.circular(3));
-    canvas.drawRRect(bgRect, Paint()..color = color);
-    canvas.restore();
 
-    // Foreground card
-    canvas.save();
-    canvas.translate(w * 0.35, h * 0.55);
-    canvas.rotate(-0.15);
-    final fgRect = RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset.zero, width: w * 0.6, height: h * 0.8),
-        const Radius.circular(3));
 
-    canvas.drawRRect(fgRect, Paint()..color = Colors.white);
-    canvas.drawRRect(fgRect, Paint()..color = color);
-
-    final spadePaint = Paint()..color = Colors.white;
-    final path = Path();
-    final sh = h * 0.3;
-    final sw = w * 0.25;
-
-    path.moveTo(0, -sh * 0.5);
-    path.cubicTo(sw * 0.8, -sh * 0.1, sw * 0.8, sh * 0.3, sw * 0.4, sh * 0.3);
-    path.cubicTo(sw * 0.2, sh * 0.3, 0, sh * 0.1, 0, sh * 0.1);
-    path.cubicTo(0, sh * 0.1, -sw * 0.2, sh * 0.3, -sw * 0.4, sh * 0.3);
-    path.cubicTo(-sw * 0.8, sh * 0.3, -sw * 0.8, -sh * 0.1, 0, -sh * 0.5);
-
-    path.moveTo(0, sh * 0.1);
-    path.lineTo(sw * 0.2, sh * 0.6);
-    path.lineTo(-sw * 0.2, sh * 0.6);
-    path.close();
-
-    canvas.drawPath(path, spadePaint);
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class JuvenileIconPainter extends CustomPainter {
-  final Color color;
-  JuvenileIconPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-    final strokePaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = w * 0.05
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final headCenterY = h * 0.25;
-    final headRadius = w * 0.2;
-
-    // main head
-    canvas.drawCircle(Offset(w * 0.5, headCenterY), headRadius, paint);
-
-    // Ears
-    canvas.drawCircle(Offset(w * 0.28, headCenterY), headRadius * 0.35, paint);
-    canvas.drawCircle(Offset(w * 0.72, headCenterY), headRadius * 0.35, paint);
-
-    // Hair swirl
-    final hairPaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = w * 0.04
-      ..strokeCap = StrokeCap.round;
-
-    final hairPath = Path();
-    hairPath.moveTo(w * 0.5, headCenterY - headRadius);
-    hairPath.cubicTo(
-        w * 0.55,
-        headCenterY - headRadius - h * 0.1,
-        w * 0.4,
-        headCenterY - headRadius - h * 0.1,
-        w * 0.48,
-        headCenterY - headRadius - h * 0.03);
-    canvas.drawPath(hairPath, hairPaint);
-
-    // White strokes for face features
-    final whiteStroke = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = w * 0.04
-      ..strokeCap = StrokeCap.round;
-
-    // Left eye (U curve)
-    final leftEyePath = Path();
-    leftEyePath.moveTo(w * 0.37, headCenterY - h * 0.02);
-    leftEyePath.quadraticBezierTo(
-        w * 0.42, headCenterY + h * 0.04, w * 0.47, headCenterY - h * 0.02);
-    canvas.drawPath(leftEyePath, whiteStroke);
-
-    // Right eye
-    final rightEyePath = Path();
-    rightEyePath.moveTo(w * 0.53, headCenterY - h * 0.02);
-    rightEyePath.quadraticBezierTo(
-        w * 0.58, headCenterY + h * 0.04, w * 0.63, headCenterY - h * 0.02);
-    canvas.drawPath(rightEyePath, whiteStroke);
-
-    // Smile
-    final smilePath = Path();
-    smilePath.moveTo(w * 0.42, headCenterY + h * 0.07);
-    smilePath.quadraticBezierTo(
-        w * 0.5, headCenterY + h * 0.12, w * 0.58, headCenterY + h * 0.07);
-    canvas.drawPath(smilePath, whiteStroke);
-
-    // Bottom part: Scale of Justice
-    final barY = headCenterY + headRadius + h * 0.02; // Top bar y position
-    final scaleBottom = h * 0.95;
-
-    // Top bar
-    canvas.drawLine(
-        Offset(w * 0.25, barY), Offset(w * 0.75, barY), strokePaint);
-
-    // Central stand (down from bar)
-    canvas.drawLine(Offset(w * 0.5, barY),
-        Offset(w * 0.5, scaleBottom - h * 0.08), strokePaint);
-
-    // Base (Trapezoid)
-    final basePath = Path();
-    basePath.moveTo(w * 0.38, scaleBottom - h * 0.08);
-    basePath.lineTo(w * 0.62, scaleBottom - h * 0.08);
-    basePath.lineTo(w * 0.7, scaleBottom);
-    basePath.lineTo(w * 0.3, scaleBottom);
-    basePath.close();
-    canvas.drawPath(basePath, paint);
-
-    // Strings
-    final stringPaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = w * 0.035
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final panY = h * 0.78; // Y where strings meet the pan
-
-    // Left strings
-    canvas.drawLine(
-        Offset(w * 0.25, barY), Offset(w * 0.15, panY), stringPaint);
-    canvas.drawLine(
-        Offset(w * 0.25, barY), Offset(w * 0.35, panY), stringPaint);
-
-    // Left pan (semi circle)
-    final leftPanPath = Path();
-    leftPanPath.arcTo(
-      Rect.fromLTRB(w * 0.15, panY - (w * 0.1), w * 0.35, panY + (w * 0.1)),
-      0,
-      3.14159265359,
-      false,
-    );
-    leftPanPath.close();
-    canvas.drawPath(leftPanPath, paint);
-
-    // Right strings
-    canvas.drawLine(
-        Offset(w * 0.75, barY), Offset(w * 0.65, panY), stringPaint);
-    canvas.drawLine(
-        Offset(w * 0.75, barY), Offset(w * 0.85, panY), stringPaint);
-
-    // Right pan
-    final rightPanPath = Path();
-    rightPanPath.arcTo(
-      Rect.fromLTRB(w * 0.65, panY - (w * 0.1), w * 0.85, panY + (w * 0.1)),
-      0,
-      3.14159265359,
-      false,
-    );
-    rightPanPath.close();
-    canvas.drawPath(rightPanPath, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class SandTheftIconPainter extends CustomPainter {
-  final Color color;
-  SandTheftIconPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-
-    final strokePaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = w * 0.08
-      ..strokeJoin = StrokeJoin.round
-      ..strokeCap = StrokeCap.round;
-
-    final chassisYTop = h * 0.75;
-    final chassisYBot = h * 0.85;
-
-    // 1. Wheels
-    final r = w * 0.12;
-    canvas.drawCircle(Offset(w * 0.25, h * 0.8), r, strokePaint);
-    canvas.drawCircle(Offset(w * 0.75, h * 0.8), r, strokePaint);
-
-    // 2. Chassis
-    // Left segment
-    canvas.drawLine(Offset(w * 0.05, chassisYTop),
-        Offset(w * 0.13, chassisYTop), strokePaint);
-    canvas.drawLine(Offset(w * 0.05, chassisYBot),
-        Offset(w * 0.13, chassisYBot), strokePaint);
-    canvas.drawLine(Offset(w * 0.05, chassisYTop),
-        Offset(w * 0.05, chassisYBot), strokePaint);
-
-    // Middle segment
-    canvas.drawLine(Offset(w * 0.37, chassisYTop),
-        Offset(w * 0.63, chassisYTop), strokePaint);
-    canvas.drawLine(Offset(w * 0.37, chassisYBot),
-        Offset(w * 0.63, chassisYBot), strokePaint);
-
-    // Right segment
-    canvas.drawLine(Offset(w * 0.87, chassisYTop),
-        Offset(w * 0.95, chassisYTop), strokePaint);
-    canvas.drawLine(Offset(w * 0.87, chassisYBot),
-        Offset(w * 0.95, chassisYBot), strokePaint);
-    canvas.drawLine(Offset(w * 0.95, chassisYTop),
-        Offset(w * 0.95, chassisYBot), strokePaint);
-
-    // 3. Cab
-    final cabPath = Path();
-    cabPath.moveTo(w * 0.6, chassisYTop);
-    cabPath.lineTo(w * 0.6, h * 0.3);
-    cabPath.lineTo(w * 0.8, h * 0.3);
-    cabPath.lineTo(w * 0.95, h * 0.55);
-    cabPath.lineTo(w * 0.95, chassisYTop);
-    canvas.drawPath(cabPath, strokePaint);
-
-    // Cab window
-    final winPath = Path();
-    winPath.moveTo(w * 0.68, h * 0.38);
-    winPath.lineTo(w * 0.78, h * 0.38);
-    winPath.lineTo(w * 0.86, h * 0.52);
-    winPath.lineTo(w * 0.68, h * 0.52);
-    winPath.close();
-    canvas.drawPath(winPath, strokePaint);
-
-    // 4. Dump Bed
-    final bedPath = Path();
-    bedPath.moveTo(w * 0.15, chassisYTop);
-    bedPath.lineTo(w * 0.05, h * 0.4);
-    bedPath.lineTo(w * 0.45, h * 0.2);
-    bedPath.lineTo(w * 0.55, h * 0.15);
-    bedPath.lineTo(w * 0.55, h * 0.5);
-    bedPath.close();
-    canvas.drawPath(bedPath, strokePaint);
-
-    // 5. Hydraulic Arm
-    canvas.drawLine(
-        Offset(w * 0.4, chassisYTop), Offset(w * 0.35, h * 0.6), strokePaint);
-
-    // 6. Sand load (wavy line)
-    final sandPath = Path();
-    sandPath.moveTo(w * 0.1, h * 0.45);
-    sandPath.quadraticBezierTo(w * 0.2, h * 0.35, w * 0.3, h * 0.45);
-    sandPath.quadraticBezierTo(w * 0.4, h * 0.55, w * 0.5, h * 0.45);
-    canvas.drawPath(sandPath, strokePaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class UndetectedIconPainter extends CustomPainter {
-  final Color color;
-  UndetectedIconPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    final handlePaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = w * 0.22
-      ..strokeCap = StrokeCap.round;
-
-    final whiteStroke = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = w * 0.08
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final cx = w * 0.6;
-    final cy = h * 0.4;
-    final r = w * 0.35;
-
-    // Handle
-    final handleStartX = cx - r * 0.707;
-    final handleStartY = cy + r * 0.707;
-    final handleEndX = w * 0.15;
-    final handleEndY = h * 0.85;
-
-    // Draw handle
-    canvas.drawLine(Offset(handleStartX, handleStartY),
-        Offset(handleEndX, handleEndY), handlePaint);
-
-    // Gap
-    final gapWhite = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = w * 0.06
-      ..strokeCap = StrokeCap.butt;
-
-    canvas.drawLine(Offset(handleStartX - w * 0.15, handleStartY - h * 0.15),
-        Offset(handleStartX + w * 0.15, handleStartY + h * 0.15), gapWhite);
-
-    // Draw outer circle
-    canvas.drawCircle(Offset(cx, cy), r, paint);
-
-    // Inner white ring
-    canvas.drawCircle(
-        Offset(cx, cy),
-        r * 0.5,
-        Paint()
-          ..color = Colors.white
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = w * 0.07);
-
-    // X mark
-    final xSize = r * 0.3;
-    canvas.drawLine(Offset(cx - xSize, cy - xSize),
-        Offset(cx + xSize, cy + xSize), whiteStroke);
-    canvas.drawLine(Offset(cx + xSize, cy - xSize),
-        Offset(cx - xSize, cy + xSize), whiteStroke);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class HurtIconPainter extends CustomPainter {
-  final Color color;
-  HurtIconPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    // 1. Knife Handle
-    canvas.drawLine(
-        Offset(w * 0.82, h * 0.15),
-        Offset(w * 0.55, h * 0.42),
-        Paint()
-          ..color = color
-          ..strokeWidth = w * 0.12
-          ..strokeCap = StrokeCap.round);
-
-    // 2. Knife Blade
-    final blade = Path();
-    blade.moveTo(w * 0.62, h * 0.3); // Top-right
-    blade.lineTo(w * 0.15, h * 0.77); // Tip
-    blade.quadraticBezierTo(
-        w * 0.3, h * 0.85, w * 0.52, h * 0.5); // Bottom curve
-    blade.close();
-    canvas.drawPath(blade, paint);
-
-    // 3. Knife Guards (White Cuts)
-    final cutPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = w * 0.03
-      ..strokeCap = StrokeCap.butt;
-
-    canvas.drawLine(
-        Offset(w * 0.58, h * 0.28), Offset(w * 0.72, h * 0.42), cutPaint);
-    canvas.drawLine(
-        Offset(w * 0.54, h * 0.32), Offset(w * 0.68, h * 0.46), cutPaint);
-
-    // 4. Blood Splat
-    final splat = Path();
-    splat.moveTo(w * 0.35, h * 0.5);
-    splat.cubicTo(
-        w * 0.35, h * 0.4, w * 0.55, h * 0.4, w * 0.55, h * 0.5); // Top bulge
-    splat.cubicTo(
-        w * 0.65, h * 0.5, w * 0.65, h * 0.65, w * 0.6, h * 0.65); // Right drip
-    splat.cubicTo(w * 0.55, h * 0.65, w * 0.5, h * 0.55, w * 0.45,
-        h * 0.6); // Inner curve
-    splat.cubicTo(
-        w * 0.4, h * 0.75, w * 0.3, h * 0.75, w * 0.3, h * 0.7); // Left drip
-    splat.cubicTo(
-        w * 0.3, h * 0.6, w * 0.25, h * 0.6, w * 0.35, h * 0.5); // Close
-
-    canvas.drawPath(
-        splat,
-        Paint()
-          ..color = Colors.white
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = w * 0.04
-          ..strokeJoin = StrokeJoin.round);
-    canvas.drawPath(splat, paint);
-
-    // 5. Blood Drops
-    void drawDrop(double cx, double cy, double s) {
-      final drop = Path();
-      drop.moveTo(cx, cy - s);
-      drop.quadraticBezierTo(cx + s, cy, cx + s, cy + s * 0.5);
-      drop.arcToPoint(Offset(cx - s, cy + s * 0.5),
-          radius: Radius.circular(s), clockwise: true);
-      drop.quadraticBezierTo(cx - s, cy, cx, cy - s);
-      canvas.drawPath(drop, paint);
-
-      final inner = Path();
-      final innerS = s * 0.4;
-      final innerCy = cy + s * 0.35;
-      inner.moveTo(cx, innerCy - innerS);
-      inner.quadraticBezierTo(
-          cx + innerS, innerCy, cx + innerS, innerCy + innerS * 0.5);
-      inner.arcToPoint(Offset(cx - innerS, innerCy + innerS * 0.5),
-          radius: Radius.circular(innerS), clockwise: true);
-      inner.quadraticBezierTo(cx - innerS, innerCy, cx, innerCy - innerS);
-      canvas.drawPath(
-          inner,
-          Paint()
-            ..color = Colors.white
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = w * 0.015);
-    }
-
-    drawDrop(w * 0.5, h * 0.78, w * 0.06);
-    drawDrop(w * 0.62, h * 0.88, w * 0.045);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class KidnappingIconPainter extends CustomPainter {
-  final Color color;
-  KidnappingIconPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-
-    final fillPaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-    final strokePaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeJoin = StrokeJoin.round
-      ..strokeCap = StrokeCap.round;
-
-    // --- PERSON ---
-    final pStrokePaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = w * 0.09
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    // Head
-    canvas.drawCircle(Offset(w * 0.75, h * 0.18), w * 0.12, fillPaint);
-
-    // Torso
-    canvas.drawLine(
-        Offset(w * 0.75, h * 0.32),
-        Offset(w * 0.75, h * 0.62),
-        Paint()
-          ..color = color
-          ..strokeWidth = w * 0.2
-          ..strokeCap = StrokeCap.round);
-
-    // Legs
-    canvas.drawLine(
-        Offset(w * 0.67, h * 0.6), Offset(w * 0.67, h * 0.95), pStrokePaint);
-    canvas.drawLine(
-        Offset(w * 0.83, h * 0.6), Offset(w * 0.83, h * 0.95), pStrokePaint);
-
-    // Arms
-    final arms = Path();
-    arms.moveTo(w * 0.52, h * 0.15); // left hand
-    arms.lineTo(w * 0.52, h * 0.35); // left elbow
-    arms.lineTo(w * 0.75, h * 0.38); // shoulders
-    arms.lineTo(w * 0.98, h * 0.35); // right elbow
-    arms.lineTo(w * 0.98, h * 0.15); // right hand
-    canvas.drawPath(arms, pStrokePaint);
-
-    // --- GUN ---
-    // Barrel
-    canvas.drawRRect(
-        RRect.fromRectAndRadius(
-            Rect.fromLTRB(w * 0.08, h * 0.45, w * 0.48, h * 0.57),
-            Radius.circular(w * 0.02)),
-        fillPaint);
-
-    // Sight bump
-    canvas.drawRRect(
-        RRect.fromRectAndRadius(
-            Rect.fromLTRB(w * 0.1, h * 0.41, w * 0.15, h * 0.45),
-            Radius.circular(w * 0.01)),
-        fillPaint);
-
-    // Grip
-    final grip = Path();
-    grip.moveTo(w * 0.18, h * 0.57); // top right
-    grip.lineTo(w * 0.1, h * 0.88); // bottom right
-    grip.lineTo(w * 0.0, h * 0.88); // bottom left
-    grip.lineTo(w * 0.08, h * 0.57); // top left
-    grip.close();
-    canvas.drawPath(grip, fillPaint);
-    canvas.drawPath(grip, strokePaint..strokeWidth = w * 0.02);
-
-    // Trigger guard
-    final guard = Path();
-    guard.moveTo(w * 0.18, h * 0.57);
-    guard.lineTo(w * 0.18, h * 0.65);
-    guard.lineTo(w * 0.35, h * 0.65);
-    guard.lineTo(w * 0.35, h * 0.57);
-    canvas.drawPath(guard, strokePaint..strokeWidth = w * 0.035);
-
-    // Trigger
-    canvas.drawLine(Offset(w * 0.25, h * 0.57), Offset(w * 0.23, h * 0.61),
-        strokePaint..strokeWidth = w * 0.02);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class ADIconPainter extends CustomPainter {
-  final Color color;
-  ADIconPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-
-    final fillPaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-    final strokePaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = w * 0.08
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    // 1. Puddle
-    final puddle = Path();
-    puddle.moveTo(w * 0.32, h * 0.63);
-    puddle.cubicTo(w * 0.32, h * 0.85, w * 0.55, h * 1.0, w * 0.55, h * 0.75);
-    puddle.cubicTo(w * 0.75, h * 0.75, w * 0.8, h * 0.5, w * 0.58, h * 0.37);
-    puddle.close();
-    canvas.drawPath(puddle, fillPaint);
-
-    // 2. Small drop
-    canvas.drawCircle(Offset(w * 0.7, h * 0.82), w * 0.05, fillPaint);
-
-    // 3. Diagonal Line
-    canvas.drawLine(
-        Offset(w * 0.1, h * 0.85),
-        Offset(w * 0.7, h * 0.25),
-        Paint()
-          ..color = color
-          ..strokeWidth = w * 0.05
-          ..strokeCap = StrokeCap.round);
-
-    // 4. Person Head
-    canvas.drawCircle(Offset(w * 0.7, h * 0.18), w * 0.08, fillPaint);
-
-    // 5. Torso
-    canvas.drawLine(
-        Offset(w * 0.62, h * 0.28),
-        Offset(w * 0.42, h * 0.48),
-        Paint()
-          ..color = color
-          ..strokeWidth = w * 0.13
-          ..strokeCap = StrokeCap.round);
-
-    // 6. Arms
-    // Left arm (front)
-    final lArm = Path();
-    lArm.moveTo(w * 0.58, h * 0.32); // Start lower on torso
-    lArm.lineTo(w * 0.35, h * 0.32); // Left
-    lArm.lineTo(w * 0.35, h * 0.46); // Down
-    canvas.drawPath(lArm, strokePaint);
-
-    // Right arm (back)
-    final rArm = Path();
-    rArm.moveTo(w * 0.62, h * 0.28); // Start at shoulder
-    rArm.lineTo(w * 0.72, h * 0.45); // Down-right
-    rArm.lineTo(w * 0.88, h * 0.28); // Up-right
-    canvas.drawPath(rArm, strokePaint);
-
-    // 7. Legs
-    // Left leg (in air)
-    final lLeg = Path();
-    lLeg.moveTo(w * 0.42, h * 0.48); // Start at pelvis
-    lLeg.lineTo(w * 0.18, h * 0.48); // Left
-    lLeg.lineTo(w * 0.15, h * 0.65); // Down
-    canvas.drawPath(lLeg, strokePaint);
-
-    // Right leg (slipping)
-    final rLeg = Path();
-    rLeg.moveTo(w * 0.42, h * 0.48);
-    rLeg.lineTo(w * 0.32, h * 0.62); // Down-left to the line
-    canvas.drawPath(rLeg, strokePaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -1296,7 +375,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     const bool isDark = false;
-    final auth = context.watch<AuthProvider>();
+    // Use context.read to get the full AuthProvider instance without subscribing
+    // DashboardScreen to every AuthProvider notification. Only changes to
+    // stationName or uid (which affect tab routing) trigger a rebuild.
+    context.select<AuthProvider, String>((a) => '${a.stationName}|${a.uid}|${a.displayName}');
+    final auth = context.read<AuthProvider>();
     final l10n = AppLocalizations.of(context)!;
 
     // ✅ Station injection removed from here — handled in main.dart globally
@@ -1304,11 +387,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final size = MediaQuery.of(context).size;
     final isWide = size.width >= Breakpoints.tablet;
 
+    // Wrap each tab in RepaintBoundary so painting in one tab
+    // (e.g. carousel auto-scroll in HomeTab) doesn't repaint siblings
     final pages = [
-      _HomeTab(isDark: isDark, auth: auth, onViewAll: () => _onNavTap(3)),
-      _WantedTab(isDark: isDark),
-      _ViewTab(isDark: isDark),
-      _CalendarTab(isDark: isDark),
+      RepaintBoundary(child: _HomeTab(isDark: isDark, auth: auth, onViewAll: () => _onNavTap(3))),
+      const RepaintBoundary(child: _WantedTab(isDark: false)),
+      RepaintBoundary(child: _ViewTab(isDark: isDark)),
+      RepaintBoundary(child: _CalendarTab(isDark: isDark)),
     ];
 
     final int pageIndex;
@@ -2833,11 +1918,13 @@ class _HomeTabState extends State<_HomeTab> {
             delegate: SliverChildListDelegate([
               _buildNewsCarousel(newsProvider, isWide),
               const SizedBox(height: AppSpacing.md),
-              _buildCaseVisibilityBanner(),
+              // RepaintBoundary: these widgets don't change on carousel slide
+              // or on most Firestore provider notifications
+              RepaintBoundary(child: _buildCaseVisibilityBanner()),
               const SizedBox(height: AppSpacing.sm),
-              _buildOfficerSosTrigger(),
+              RepaintBoundary(child: _buildOfficerSosTrigger()),
               const SizedBox(height: AppSpacing.md),
-              DashboardStatsWidget(auth: widget.auth),
+              RepaintBoundary(child: DashboardStatsWidget(auth: widget.auth)),
               const SizedBox(height: AppSpacing.lg),
               _buildSearchBar(),
               if (_hasActiveSearch) ...[
@@ -3530,6 +2617,7 @@ class _HomeTabState extends State<_HomeTab> {
     }
   }
 
+  // ignore: unused_element
   void _showFilterSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,

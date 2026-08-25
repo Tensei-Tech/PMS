@@ -73,6 +73,7 @@ import '../widgets/property_seizure_form_view.dart';
 import '../widgets/crimespot_seizure_form_view.dart';
 import '../widgets/form_e_view.dart';
 import '../widgets/arrest_surrender_form_view.dart';
+import '../widgets/top_feedback_toast.dart';
 import '../widgets/inquest_panchanama_form_view.dart';
 import '../widgets/accused_memorandum_form_view.dart';
 import '../widgets/final_report_form_view.dart';
@@ -1301,25 +1302,30 @@ class _CommonFormScreenState extends State<CommonFormScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(
-          _isEdit
-              ? '${widget.moduleLabel} record updated!'
-              : '${widget.moduleLabel} case registered!',
-          style: GoogleFonts.poppins(),
-        ),
-        backgroundColor: AppColors.successGreen,
-      ));
+      final caseLabel = record.caseNumber.isNotEmpty
+          ? record.caseNumber
+          : (record.title.isNotEmpty ? record.title : 'Record');
+
+      TopFeedbackToast.show(
+        context,
+        title: _isEdit
+            ? '${widget.moduleLabel} Updated'
+            : '${widget.moduleLabel} Registered',
+        message: _isEdit
+            ? '$caseLabel has been successfully updated.'
+            : '$caseLabel has been registered successfully.',
+        type: TopFeedbackType.success,
+      );
+
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(
-          'Failed to save record: $e',
-          style: GoogleFonts.poppins(),
-        ),
-        backgroundColor: AppColors.dangerRed,
-      ));
+      TopFeedbackToast.show(
+        context,
+        title: 'Operation Failed',
+        message: 'Failed to save record: $e',
+        type: TopFeedbackType.error,
+      );
     }
   }
 

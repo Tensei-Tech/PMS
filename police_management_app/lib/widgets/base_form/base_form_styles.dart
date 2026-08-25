@@ -60,6 +60,19 @@ abstract final class BaseFormStyles {
           borderRadius: BorderRadius.circular(AppRadius.md),
           borderSide: const BorderSide(color: accent, width: 1.5),
         ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: const BorderSide(color: AppColors.dangerRed, width: 1),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: const BorderSide(color: AppColors.dangerRed, width: 1.5),
+        ),
+        errorStyle: GoogleFonts.poppins(
+          fontSize: 11,
+          color: AppColors.dangerRed,
+          fontWeight: FontWeight.w500,
+        ),
       );
 
   static String formatDateDdMmYyyy(DateTime d) =>

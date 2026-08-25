@@ -46,6 +46,7 @@ import '../modules/coin/providers/coin_provider.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/base_form/base_form.dart';
+import '../widgets/top_feedback_toast.dart';
 
 class ModuleFormScreen extends StatefulWidget {
   final String moduleLabel;
@@ -247,25 +248,30 @@ class _ModuleFormScreenState extends State<ModuleFormScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(
-          _isEdit
-              ? '${widget.moduleLabel} record updated!'
-              : '${widget.moduleLabel} case registered!',
-          style: GoogleFonts.poppins(),
-        ),
-        backgroundColor: AppColors.successGreen,
-      ));
+      final caseLabel = record.caseNumber.isNotEmpty
+          ? record.caseNumber
+          : (record.title.isNotEmpty ? record.title : 'Record');
+
+      TopFeedbackToast.show(
+        context,
+        title: _isEdit
+            ? '${widget.moduleLabel} Updated'
+            : '${widget.moduleLabel} Registered',
+        message: _isEdit
+            ? '$caseLabel has been successfully updated.'
+            : '$caseLabel has been registered successfully.',
+        type: TopFeedbackType.success,
+      );
+
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(
-          'Failed to save record: $e',
-          style: GoogleFonts.poppins(),
-        ),
-        backgroundColor: AppColors.dangerRed,
-      ));
+      TopFeedbackToast.show(
+        context,
+        title: 'Operation Failed',
+        message: 'Failed to save record: $e',
+        type: TopFeedbackType.error,
+      );
     }
   }
 
@@ -305,6 +311,7 @@ class _ModuleFormScreenState extends State<ModuleFormScreen> {
       children: [
         Form(
           key: _formKey,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -316,12 +323,18 @@ class _ModuleFormScreenState extends State<ModuleFormScreen> {
                     controller: _caseNoCtrl,
                     hint: 'e.g. FIR/2024/0101',
                     prefixIcon: Icons.numbers_rounded,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Case / FIR Number is required'
+                        : null,
                   ),
                   StandardTextField(
                     label: 'Subject / Case Title',
                     controller: _titleCtrl,
                     hint: 'Brief case title',
                     prefixIcon: Icons.title_rounded,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Subject / Case Title is required'
+                        : null,
                   ),
                 ]),
                 const SizedBox(height: AppSpacing.md),
@@ -341,11 +354,18 @@ class _ModuleFormScreenState extends State<ModuleFormScreen> {
                     controller: _locationCtrl,
                     hint: 'Place of occurrence',
                     prefixIcon: Icons.map_rounded,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Location is required'
+                        : null,
                   ),
                   StandardTextField(
                     label: 'Complainant Name',
                     controller: _complainantCtrl,
+                    hint: 'Enter complainant name',
                     prefixIcon: Icons.person_add_alt_rounded,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Complainant Name is required'
+                        : null,
                   ),
                 ]),
                 const SizedBox(height: AppSpacing.md),
@@ -355,13 +375,21 @@ class _ModuleFormScreenState extends State<ModuleFormScreen> {
                   hint: 'Detailed explanation...',
                   maxLines: 4,
                   prefixIcon: Icons.description_outlined,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Description is required'
+                      : null,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 StandardTextField(
                   label: 'Accused Name / Description',
                   controller: _accusedCtrl,
-                  hint: 'Leave empty if unknown',
+                  hint: (widget.moduleKey == 'detected' || widget.moduleKey == 'undetected')
+                      ? 'Enter accused name / description'
+                      : 'Leave empty if unknown',
                   prefixIcon: Icons.person_off_rounded,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Accused Name / Description is required'
+                      : null,
                 ),
               ]),
               const SizedBox(height: AppSpacing.lg),
