@@ -61,10 +61,10 @@ class _PoliceStationsViewState extends State<PoliceStationsView> {
         children: [
           // Stream Users and Cases together for 100% live data
           StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance.collection('users').snapshots(),
+            stream: FirebaseFirestore.instance.collection('users').limit(500).snapshots(),
             builder: (context, userSnapshot) {
               return StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance.collection('cases').snapshots(),
+                stream: FirebaseFirestore.instance.collection('cases').limit(500).snapshots(),
                 builder: (context, caseSnapshot) {
                   final isLoading = (userSnapshot.connectionState == ConnectionState.waiting && !userSnapshot.hasData) ||
                       (caseSnapshot.connectionState == ConnectionState.waiting && !caseSnapshot.hasData);
@@ -788,10 +788,17 @@ class _StationDetailViewState extends State<_StationDetailView> {
 
           // Streams for Station Officers & Cases (100% Live Firestore)
           StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance.collection('users').snapshots(),
+            stream: FirebaseFirestore.instance
+                .collection('users')
+                .where('stationName', isEqualTo: widget.stationName.trim())
+                .snapshots(),
             builder: (context, userSnapshot) {
               return StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance.collection('cases').snapshots(),
+                stream: FirebaseFirestore.instance
+                    .collection('cases')
+                    .where('stationName', isEqualTo: widget.stationName.trim())
+                    .limit(200)
+                    .snapshots(),
                 builder: (context, caseSnapshot) {
                   final userDocs = userSnapshot.data?.docs ?? [];
                   final caseDocs = caseSnapshot.data?.docs ?? [];

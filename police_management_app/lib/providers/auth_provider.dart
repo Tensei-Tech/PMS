@@ -335,19 +335,21 @@ class AuthProvider extends ChangeNotifier {
     return null;
   }
 
+  Future<void> _touchUserLastActive(String userUid) async {
+    if (userUid.isEmpty) return;
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(userUid).update({
+        'lastActiveAt': FieldValue.serverTimestamp(),
+        'lastActive': FieldValue.serverTimestamp(),
+        'lastLoginAt': FieldValue.serverTimestamp(),
+      });
+    } catch (_) {}
+  }
+
   Future<void> _applyProfileAndBackfill(UserModel profile) async {
     _applyProfile(profile);
     await _backfillDistrictIfNeeded(profile);
-    try {
-      final userUid = profile.uid.isNotEmpty ? profile.uid : uid;
-      if (userUid.isNotEmpty) {
-        await FirebaseFirestore.instance.collection('users').doc(userUid).update({
-          'lastActiveAt': FieldValue.serverTimestamp(),
-          'lastActive': FieldValue.serverTimestamp(),
-          'lastLoginAt': FieldValue.serverTimestamp(),
-        });
-      }
-    } catch (_) {}
+    await _touchUserLastActive(profile.uid.isNotEmpty ? profile.uid : uid);
   }
 
   /// One-time district backfill from stationAddress for legacy profiles.
@@ -634,19 +636,27 @@ class AuthProvider extends ChangeNotifier {
         return access.blockMessage;
       }
 
-      final salt = PinCrypto.generateSalt();
-      final pinHash = await PinCrypto.hashPinAsync(pin.trim(), salt);
-      await _secure.write(key: StorageKeys.email, value: sanitizedEmail);
-      await _secure.write(key: StorageKeys.pinHash, value: pinHash);
-      await _secure.write(key: StorageKeys.pinSalt, value: salt);
-
-      await _lockout.recordSuccess();
-      await _applyProfileAndBackfill(profile);
+      _applyProfile(profile);
       _isRegistered = true;
       _isSessionActive = true;
       notifyListeners();
 
-      await _audit.log(AuditEvent.loginSuccess, uid: res.user!.uid);
+      // Parallelize secure storage writes, lockout record, backfill, and audit log in background
+      unawaited(Future.wait([
+        PinCrypto.hashPinAsync(pin.trim(), PinCrypto.generateSalt()).then((pinHash) async {
+          final salt = PinCrypto.generateSalt();
+          await Future.wait([
+            _secure.write(key: StorageKeys.email, value: sanitizedEmail),
+            _secure.write(key: StorageKeys.pinHash, value: pinHash),
+            _secure.write(key: StorageKeys.pinSalt, value: salt),
+          ]);
+        }).catchError((_) {}),
+        _lockout.recordSuccess(),
+        _backfillDistrictIfNeeded(profile),
+        _touchUserLastActive(profile.uid.isNotEmpty ? profile.uid : uid),
+        _audit.log(AuditEvent.loginSuccess, uid: res.user!.uid),
+      ]));
+
       return null;
     } catch (e) {
       _secureLog('loginWithPin: authentication failed');
@@ -711,21 +721,27 @@ class AuthProvider extends ChangeNotifier {
         return access.blockMessage;
       }
 
-      final salt = PinCrypto.generateSalt();
-      final pinHash = await PinCrypto.hashPinAsync(sanitizedPin, salt);
-      await _secure.write(key: StorageKeys.email, value: sanitizedEmail);
-      await _secure.write(key: StorageKeys.pinHash, value: pinHash);
-      await _secure.write(key: StorageKeys.pinSalt, value: salt);
-
-      await _lockout.recordSuccess();
-
+      _applyProfile(user);
       _isRegistered = true;
       _isSessionActive = true;
-      await _applyProfileAndBackfill(user);
-
       notifyListeners();
 
-      await _audit.log(AuditEvent.loginSuccess, uid: _auth.currentUser!.uid);
+      // Parallelize secure storage writes, lockout record, backfill, and audit log in background
+      unawaited(Future.wait([
+        PinCrypto.hashPinAsync(sanitizedPin, PinCrypto.generateSalt()).then((pinHash) async {
+          final salt = PinCrypto.generateSalt();
+          await Future.wait([
+            _secure.write(key: StorageKeys.email, value: sanitizedEmail),
+            _secure.write(key: StorageKeys.pinHash, value: pinHash),
+            _secure.write(key: StorageKeys.pinSalt, value: salt),
+          ]);
+        }).catchError((_) {}),
+        _lockout.recordSuccess(),
+        _backfillDistrictIfNeeded(user),
+        _touchUserLastActive(_auth.currentUser!.uid),
+        _audit.log(AuditEvent.loginSuccess, uid: _auth.currentUser!.uid),
+      ]));
+
       return null;
 
     } on fb.FirebaseAuthException catch (e) {

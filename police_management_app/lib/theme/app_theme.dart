@@ -283,7 +283,7 @@ class AppTheme {
           ),
         );
       },
-      transitionDuration: const Duration(milliseconds: 350),
+      transitionDuration: const Duration(milliseconds: 220),
     );
   }
 }

@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shimmer/shimmer.dart';
 
 import '../modules/core/models/base_record.dart';
 import '../providers/auth_provider.dart';
@@ -104,6 +105,17 @@ class _DashboardStatsWidgetState extends State<DashboardStatsWidget> {
         _disposalLoaded = false;
       });
     }
+
+    // Safety timeout: ensure loading state resolves within 2.5s even if stream hangs
+    Future.delayed(const Duration(milliseconds: 2500), () {
+      if (mounted && (!_casesLoaded || !_pendingLoaded || !_disposalLoaded)) {
+        setState(() {
+          _casesLoaded = true;
+          _pendingLoaded = true;
+          _disposalLoaded = true;
+        });
+      }
+    });
 
     final mode = CaseVisibility.resolveFor(widget.auth);
     final uid = widget.auth.uid;
@@ -361,12 +373,16 @@ class _SummaryStatCard extends StatelessWidget {
               ),
               SizedBox(height: isMobile ? 2 : 4),
               data.loading
-                  ? SizedBox(
-                      height: 16,
-                      width: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: data.accent,
+                  ? Shimmer.fromColors(
+                      baseColor: Colors.grey.shade300,
+                      highlightColor: Colors.grey.shade100,
+                      child: Container(
+                        height: valueFontSize,
+                        width: 28,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                       ),
                     )
                   : Text(
