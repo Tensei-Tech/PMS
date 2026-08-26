@@ -14,6 +14,8 @@ import '../screens/my_cases_screen.dart';
 import '../services/firestore_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/case_visibility.dart';
+import '../utils/perf_tracker.dart';
+import '../utils/read_counter.dart';
 
 /// Summary cards: total active, pending cases, disposed — filtered by role/visibility.
 class DashboardStatsWidget extends StatefulWidget {
@@ -28,16 +30,13 @@ class DashboardStatsWidget extends StatefulWidget {
 class _DashboardStatsWidgetState extends State<DashboardStatsWidget> {
   final FirestoreService _firestore = FirestoreService();
 
-  StreamSubscription<List<ModuleRecord>>? _casesSub;
-  StreamSubscription<List<ModuleRecord>>? _pendingCasesSub;
-  StreamSubscription<List<ModuleRecord>>? _disposalSub;
+  // Single stream subscription instead of 3 — reduces 5 Firestore listeners to 1.
+  StreamSubscription<List<ModuleRecord>>? _statsSub;
 
   int _totalActive = 0;
   int _pendingAction = 0;
   int _disposed = 0;
-  bool _casesLoaded = false;
-  bool _pendingLoaded = false;
-  bool _disposalLoaded = false;
+  bool _loaded = false;
   String? _subscribedKey;
 
   @override
@@ -60,12 +59,8 @@ class _DashboardStatsWidgetState extends State<DashboardStatsWidget> {
 
   void _ensureSubscriptions() {
     if (!widget.auth.isSessionActive) {
-      _casesSub?.cancel();
-      _pendingCasesSub?.cancel();
-      _disposalSub?.cancel();
-      _casesSub = null;
-      _pendingCasesSub = null;
-      _disposalSub = null;
+      _statsSub?.cancel();
+      _statsSub = null;
       _subscribedKey = null;
       return;
     }
@@ -74,15 +69,15 @@ class _DashboardStatsWidgetState extends State<DashboardStatsWidget> {
     final mode = CaseVisibility.resolveFor(widget.auth);
     final key =
         '$station|${mode.name}|${widget.auth.uid}|${widget.auth.designation}|${widget.auth.zone}';
-    if (_subscribedKey == key && _casesSub != null) return;
+    if (_subscribedKey == key && _statsSub != null) return;
     _subscribedKey = key;
     _subscribeAll(station);
   }
 
   void _subscribeAll(String station) {
-    _casesSub?.cancel();
-    _pendingCasesSub?.cancel();
-    _disposalSub?.cancel();
+    PerfTracker.startOp('DashboardStats.subscribeAll');
+    _statsSub?.cancel();
+    _statsSub = null;
 
     if (station.isEmpty) {
       if (mounted) {
@@ -90,127 +85,67 @@ class _DashboardStatsWidgetState extends State<DashboardStatsWidget> {
           _totalActive = 0;
           _pendingAction = 0;
           _disposed = 0;
-          _casesLoaded = true;
-          _pendingLoaded = true;
-          _disposalLoaded = true;
+          _loaded = true;
         });
       }
       return;
     }
 
-    if (mounted) {
-      setState(() {
-        _casesLoaded = false;
-        _pendingLoaded = false;
-        _disposalLoaded = false;
-      });
-    }
+    if (mounted) setState(() => _loaded = false);
 
-    // Safety timeout: ensure loading state resolves within 2.5s even if stream hangs
+    // Safety timeout: resolve loading state within 2.5s even if stream hangs.
     Future.delayed(const Duration(milliseconds: 2500), () {
-      if (mounted && (!_casesLoaded || !_pendingLoaded || !_disposalLoaded)) {
-        setState(() {
-          _casesLoaded = true;
-          _pendingLoaded = true;
-          _disposalLoaded = true;
-        });
-      }
+      if (mounted && !_loaded) setState(() => _loaded = true);
     });
 
     final mode = CaseVisibility.resolveFor(widget.auth);
     final uid = widget.auth.uid;
 
-    final pendingIds = <String>{};
-    final disposalIds = <String>{};
-    final casesIds = <String>{};
-
-    void recomputeTotal() {
-      if (!mounted) return;
-      final allIds = <String>{...casesIds, ...pendingIds, ...disposalIds};
-      setState(() {
-        _totalActive = allIds.length;
-      });
-    }
-
-    _casesSub = _firestore.getStationCasesStream(station).listen(
+    // Single merged stream — getStationCasesStream already merges cases +
+    // pending_cases + disposal_cases internally. Derive all 3 stats from it.
+    _statsSub = _firestore.getStationCasesStream(station).listen(
       (records) {
+        PerfTracker.stopOp('DashboardStats.subscribeAll');
+        PerfTracker.log('9a. getStationCasesStream snapshot received (${records.length} docs)');
+
         final filtered = CaseVisibility.filterRecords(
           records,
           uid: uid,
           mode: mode,
         );
-        casesIds.clear();
-        for (final r in filtered) {
-          casesIds.add(r.id);
-        }
-        if (!mounted) return;
-        setState(() {
-          _casesLoaded = true;
-        });
-        recomputeTotal();
-      },
-      onError: (_) {
-        if (!mounted) return;
-        setState(() => _casesLoaded = true);
-      },
-    );
 
-    _pendingCasesSub = _firestore.getPendingCasesStream(station).listen(
-      (records) {
-        final filtered = CaseVisibility.filterRecords(
-          records,
-          uid: uid,
-          mode: mode,
-        );
-        pendingIds.clear();
+        // Derive counts by status from the single merged stream.
+        int pending = 0;
+        int disposed = 0;
         for (final r in filtered) {
-          pendingIds.add(r.id);
+          final s = r.status.trim().toLowerCase();
+          if (s == 'pending') pending++;
+          if (s == 'disposal' || s == 'closed' || s == 'resolved') disposed++;
         }
-        if (!mounted) return;
-        setState(() {
-          _pendingAction = filtered.length;
-          _pendingLoaded = true;
-        });
-        recomputeTotal();
-      },
-      onError: (_) {
-        if (!mounted) return;
-        setState(() => _pendingLoaded = true);
-      },
-    );
 
-    _disposalSub = _firestore.getDisposalCasesStream(station).listen(
-      (records) {
-        final filtered = CaseVisibility.filterRecords(
-          records,
-          uid: uid,
-          mode: mode,
-        );
-        disposalIds.clear();
-        for (final r in filtered) {
-          disposalIds.add(r.id);
-        }
         if (!mounted) return;
         setState(() {
-          _disposed = filtered.length;
-          _disposalLoaded = true;
+          _totalActive = filtered.length;
+          _pendingAction = pending;
+          _disposed = disposed;
+          _loaded = true;
         });
-        recomputeTotal();
+        PerfTracker.log('9d. DASHBOARD STATS FULLY LOADED');
+        ReadCounter.printSummary('DashboardStats loaded — FULL SESSION SUMMARY');
       },
       onError: (_) {
         if (!mounted) return;
-        setState(() => _disposalLoaded = true);
+        setState(() => _loaded = true);
       },
     );
   }
 
   @override
   void dispose() {
-    _casesSub?.cancel();
-    _pendingCasesSub?.cancel();
-    _disposalSub?.cancel();
+    _statsSub?.cancel();
     super.dispose();
   }
+
 
   void _openActiveCases() {
     Navigator.push(
@@ -251,7 +186,7 @@ class _DashboardStatsWidgetState extends State<DashboardStatsWidget> {
         value: _totalActive,
         icon: Icons.folder_rounded,
         accent: AppColors.infoBlue,
-        loading: !_casesLoaded,
+        loading: !_loaded,
         onTap: _openActiveCases,
       ),
       _StatCardData(
@@ -259,7 +194,7 @@ class _DashboardStatsWidgetState extends State<DashboardStatsWidget> {
         value: _pendingAction,
         icon: Icons.schedule_rounded,
         accent: AppColors.warningOrange,
-        loading: !_pendingLoaded,
+        loading: !_loaded,
         onTap: _openPendingCases,
       ),
       _StatCardData(
@@ -267,7 +202,7 @@ class _DashboardStatsWidgetState extends State<DashboardStatsWidget> {
         value: _disposed,
         icon: Icons.check_circle_rounded,
         accent: AppColors.successGreen,
-        loading: !_disposalLoaded,
+        loading: !_loaded,
         onTap: _openDisposedCases,
       ),
     ];

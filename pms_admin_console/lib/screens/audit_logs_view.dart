@@ -304,7 +304,7 @@ class _AuditLogsViewState extends State<AuditLogsView> {
           // Main Responsive Content Area with Live Users & Audit Logs
           Expanded(
             child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-              stream: FirebaseFirestore.instance.collection('users').snapshots(),
+              stream: FirebaseFirestore.instance.collection('users').limit(200).snapshots(),
               builder: (context, usersSnapshot) {
                 final usersMap = <String, Map<String, dynamic>>{};
                 if (usersSnapshot.hasData) {
@@ -317,6 +317,7 @@ class _AuditLogsViewState extends State<AuditLogsView> {
                   stream: FirebaseFirestore.instance
                       .collection('audit_logs')
                       .orderBy('timestamp', descending: true)
+                      .limit(200)
                       .snapshots(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {

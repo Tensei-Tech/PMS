@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../utils/perf_tracker.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:provider/provider.dart';
@@ -210,157 +211,68 @@ dynamic _dashboardTileIcon(String label, dynamic fallback) {
   }
 }
 
+final Map<String, Widget> _svgIconCacheMap = {};
+
+Widget _cachedSvg(String assetPath, double multiplier, Color color, double baseSize) {
+  final dim = baseSize * multiplier;
+  final key = '$assetPath|$dim|${color.toARGB32()}';
+  return _svgIconCacheMap.putIfAbsent(
+    key,
+    () => SvgPicture.asset(
+      assetPath,
+      width: dim,
+      height: dim,
+      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+    ),
+  );
+}
+
 Widget _buildGridIcon(
     String label, dynamic fallback, Color color, double size) {
   final labelTrim = label.replaceAll('\n', ' ').trim();
 
   if (labelTrim == 'I to V') {
-    return SvgPicture.asset(
-      'assets/icons/1to5.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/1to5.svg', 1.5, color, size);
   } else if (labelTrim == 'VI') {
-    return SvgPicture.asset(
-      'assets/icons/6.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/6.svg', 1.5, color, size);
   } else if (labelTrim == 'Pending') {
-    return SvgPicture.asset(
-      'assets/icons/pending.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/pending.svg', 1.5, color, size);
   } else if (labelTrim == 'Gambling') {
-    return SvgPicture.asset(
-      'assets/icons/gambling.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/gambling.svg', 1.5, color, size);
   } else if (labelTrim == 'Juvenile') {
-    return SvgPicture.asset(
-      'assets/icons/juvenile.svg',
-      width: size * 2.2,
-      height: size * 2.2,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/juvenile.svg', 2.2, color, size);
   } else if (labelTrim.toLowerCase().replaceAll(' ', '') == 'sandtheft') {
-    return SvgPicture.asset(
-      'assets/icons/sandtheft.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/sandtheft.svg', 1.5, color, size);
   } else if (labelTrim == 'Undetected') {
-    return SvgPicture.asset(
-      'assets/icons/undetected.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/undetected.svg', 1.5, color, size);
   } else if (labelTrim == 'Hurt') {
-    return SvgPicture.asset(
-      'assets/icons/hurt.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/hurt.svg', 1.5, color, size);
   } else if (labelTrim == 'Kidnapping') {
-    return SvgPicture.asset(
-      'assets/icons/kidnapping.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/kidnapping.svg', 1.5, color, size);
   } else if (labelTrim == 'Missing') {
-    return SvgPicture.asset(
-      'assets/icons/missing.svg',
-      width: size * 2.1,
-      height: size * 2.1,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/missing.svg', 2.1, color, size);
   } else if (labelTrim == 'N.C') {
-    return SvgPicture.asset(
-      'assets/icons/nc.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/nc.svg', 1.5, color, size);
   } else if (labelTrim == 'Arrested') {
-    return SvgPicture.asset(
-      'assets/icons/arrested.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/arrested.svg', 1.5, color, size);
   } else if (labelTrim == 'POCSO') {
-    return SvgPicture.asset(
-      'assets/icons/pocso.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/pocso.svg', 1.5, color, size);
   } else if (labelTrim == 'Crime against Women') {
-    return SvgPicture.asset(
-      'assets/icons/crimewomen.svg',
-      width: size * 2.2,
-      height: size * 2.2,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/crimewomen.svg', 2.2, color, size);
   } else if (labelTrim == 'Victim') {
-    return SvgPicture.asset(
-      'assets/icons/victim.svg',
-      width: size * 2.2,
-      height: size * 2.2,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/victim.svg', 2.2, color, size);
   } else if (labelTrim == 'A.D') {
-    return SvgPicture.asset(
-      'assets/icons/ad.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/ad.svg', 1.5, color, size);
   } else if (labelTrim == 'Prohibition') {
-    return SvgPicture.asset(
-      'assets/icons/prohibiton.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/prohibiton.svg', 1.5, color, size);
   } else if (labelTrim == 'Theft') {
-    return SvgPicture.asset(
-      'assets/icons/theft.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/theft.svg', 1.5, color, size);
   } else if (labelTrim == 'Two/Four Wheeler') {
-    return SvgPicture.asset(
-      'assets/icons/2-4wheeler.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/2-4wheeler.svg', 1.5, color, size);
   } else if (labelTrim == 'Sam/Warrant') {
-    return SvgPicture.asset(
-      'assets/icons/sam-warrants.svg',
-      width: size * 2.2,
-      height: size * 2.2,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/sam-warrants.svg', 2.2, color, size);
   } else if (labelTrim == 'Muddemal') {
-    return SvgPicture.asset(
-      'assets/icons/muddemal.svg',
-      width: size * 1.5,
-      height: size * 1.5,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-    );
+    return _cachedSvg('assets/icons/muddemal.svg', 1.5, color, size);
   } else if (labelTrim == 'RTI') {
     return SvgPicture.asset(
       'assets/icons/rti.svg',
@@ -1266,11 +1178,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    PerfTracker.log('7. DashboardScreen.initState()');
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<AuthProvider>().refreshProfileFromFirestore();
+      PerfTracker.log('8. DashboardScreen FIRST FRAME RENDERED');
+      // NOTE: refreshProfileFromFirestore() removed — AuthProvider.watchUser() stream
+      // already provides real-time profile updates, making this extra .get() call redundant.
     });
   }
+
 
   void _onNavTap(int index) {
     if (index == 2) {
@@ -2243,7 +2159,7 @@ class _HomeTab extends StatefulWidget {
 class _HomeTabState extends State<_HomeTab> {
   final FirestoreService _firestore = FirestoreService();
   List<ModuleRecord> _recentRecords = [];
-  StreamSubscription? _recentSub;
+  // _recentSub removed — recent cases now fetched via one-shot .get() instead of a live stream.
 
   Map<String, dynamic> _mapRecordToCaseMap(ModuleRecord r) {
     Color iconColor;
@@ -2739,9 +2655,7 @@ class _HomeTabState extends State<_HomeTab> {
     return results;
   }
 
-  void _initRecentStream() {
-    _recentSub?.cancel();
-    _recentSub = null;
+  Future<void> _initRecentStream() async {
     final activeStation = widget.auth.stationName;
     if (activeStation.isEmpty) {
       if (mounted && _recentRecords.isNotEmpty) {
@@ -2751,8 +2665,11 @@ class _HomeTabState extends State<_HomeTab> {
     }
     if (mounted) setState(() => _recentRecords = []);
 
-    _recentSub =
-        _firestore.getRecentCasesStream(100, activeStation).listen((data) {
+    PerfTracker.startOp('getRecentCasesOnce');
+    try {
+      final data = await _firestore.fetchRecentCasesOnce(100, activeStation);
+      PerfTracker.stopOp('getRecentCasesOnce');
+      PerfTracker.log('9c. fetchRecentCasesOnce received (${data.length} docs)');
       if (!mounted) return;
       final mode = CaseVisibility.resolveFor(widget.auth);
       final filtered = CaseVisibility.filterRecords(
@@ -2761,12 +2678,15 @@ class _HomeTabState extends State<_HomeTab> {
         mode: mode,
       );
       setState(() => _recentRecords = filtered.take(10).toList());
-    });
+      PerfTracker.log('10. DASHBOARD FULLY INTERACTIVE & DATA POPULATED');
+    } catch (e) {
+      PerfTracker.log('9c. fetchRecentCasesOnce error: $e');
+    }
   }
+
 
   @override
   void dispose() {
-    _recentSub?.cancel();
     _searchCtrl.dispose();
     _searchFocusNode.dispose();
     _debounce?.cancel();
@@ -5327,37 +5247,37 @@ class _CalendarTabState extends State<_CalendarTab> {
 
   List<ModuleRecord> _getConsolidatedRecords(BuildContext context) {
     final records = <ModuleRecord>[];
-    records.addAll(context.watch<FormIVProvider>().records);
-    records.addAll(context.watch<FormVIProvider>().records);
-    records.addAll(context.watch<NcProvider>().records);
-    records.addAll(context.watch<PreventiveProvider>().records);
-    records.addAll(context.watch<AdProvider>().records);
-    records.addAll(context.watch<MissingProvider>().records);
-    records.addAll(context.watch<KidnappingProvider>().records);
-    records.addAll(context.watch<TheftProvider>().records);
-    records.addAll(context.watch<SandTheftProvider>().records);
-    records.addAll(context.watch<HurtProvider>().records);
-    records.addAll(context.watch<PocsoProvider>().records);
-    records.addAll(context.watch<PassportProvider>().records);
-    records.addAll(context.watch<TwoFourWheelerProvider>().records);
-    records.addAll(context.watch<ArrestedProvider>().records);
-    records.addAll(context.watch<AbscondedProvider>().records);
-    records.addAll(context.watch<CrimeWomenProvider>().records);
-    records.addAll(context.watch<JuvenileProvider>().records);
-    records.addAll(context.watch<VictimProvider>().records);
-    records.addAll(context.watch<AccidentProvider>().records);
-    records.addAll(context.watch<TrafficProvider>().records);
-    records.addAll(context.watch<ApplicationProvider>().records);
-    records.addAll(context.watch<SamWarrantProvider>().records);
-    records.addAll(context.watch<MuddemalProvider>().records);
-    records.addAll(context.watch<BnssProvider>().records);
-    records.addAll(context.watch<NdpsProvider>().records);
-    records.addAll(context.watch<GowansProvider>().records);
-    records.addAll(context.watch<ItActProvider>().records);
-    records.addAll(context.watch<McocaProvider>().records);
-    records.addAll(context.watch<UapaProvider>().records);
-    records.addAll(context.watch<MpdaProvider>().records);
-    records.addAll(context.watch<CoinProvider>().records);
+    records.addAll(context.read<FormIVProvider>().records);
+    records.addAll(context.read<FormVIProvider>().records);
+    records.addAll(context.read<NcProvider>().records);
+    records.addAll(context.read<PreventiveProvider>().records);
+    records.addAll(context.read<AdProvider>().records);
+    records.addAll(context.read<MissingProvider>().records);
+    records.addAll(context.read<KidnappingProvider>().records);
+    records.addAll(context.read<TheftProvider>().records);
+    records.addAll(context.read<SandTheftProvider>().records);
+    records.addAll(context.read<HurtProvider>().records);
+    records.addAll(context.read<PocsoProvider>().records);
+    records.addAll(context.read<PassportProvider>().records);
+    records.addAll(context.read<TwoFourWheelerProvider>().records);
+    records.addAll(context.read<ArrestedProvider>().records);
+    records.addAll(context.read<AbscondedProvider>().records);
+    records.addAll(context.read<CrimeWomenProvider>().records);
+    records.addAll(context.read<JuvenileProvider>().records);
+    records.addAll(context.read<VictimProvider>().records);
+    records.addAll(context.read<AccidentProvider>().records);
+    records.addAll(context.read<TrafficProvider>().records);
+    records.addAll(context.read<ApplicationProvider>().records);
+    records.addAll(context.read<SamWarrantProvider>().records);
+    records.addAll(context.read<MuddemalProvider>().records);
+    records.addAll(context.read<BnssProvider>().records);
+    records.addAll(context.read<NdpsProvider>().records);
+    records.addAll(context.read<GowansProvider>().records);
+    records.addAll(context.read<ItActProvider>().records);
+    records.addAll(context.read<McocaProvider>().records);
+    records.addAll(context.read<UapaProvider>().records);
+    records.addAll(context.read<MpdaProvider>().records);
+    records.addAll(context.read<CoinProvider>().records);
     return records;
   }
 

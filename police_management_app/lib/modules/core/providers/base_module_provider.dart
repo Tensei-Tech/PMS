@@ -5,6 +5,7 @@ import 'dart:async';
 import '../models/base_record.dart';
 import '../../../services/firestore_service.dart';
 import '../../../utils/case_visibility.dart';
+import '../../../utils/perf_tracker.dart';
 
 class BaseModuleProvider extends ChangeNotifier {
   final String moduleKey;
@@ -30,29 +31,12 @@ class BaseModuleProvider extends ChangeNotifier {
     });
   }
 
-  void setStationContext({
-    required String stationId,
-    required String uid,
-    required CaseVisibilityMode visibilityMode,
-  }) {
-    if (_stationId == stationId &&
-        _uid == uid &&
-        _visibilityMode == visibilityMode &&
-        _sub != null) {
-      return;
-    }
-    _stationId = stationId;
-    _uid = uid;
-    _visibilityMode = visibilityMode;
-    _sub?.cancel();
+  void ensureSubscribed() {
+    if (_stationId.isEmpty) return;
+    if (_sub != null) return;
 
-    if (stationId.isEmpty) {
-      _records = [];
-      _scheduleNotify();
-      return;
-    }
-
-    _sub = _firestore.getCasesStream(moduleKey, stationId).listen(
+    PerfTracker.log('6a. ModuleProvider[$moduleKey].ensureSubscribed opening Firestore stream on-demand');
+    _sub = _firestore.getCasesStream(moduleKey, _stationId).listen(
       (records) {
         _records = CaseVisibility.filterRecords(
           records,
@@ -65,6 +49,29 @@ class BaseModuleProvider extends ChangeNotifier {
         debugPrint('[$moduleKey] Firestore stream error: $e');
       },
     );
+  }
+
+  void setStationContext({
+    required String stationId,
+    required String uid,
+    required CaseVisibilityMode visibilityMode,
+  }) {
+    if (_stationId == stationId &&
+        _uid == uid &&
+        _visibilityMode == visibilityMode) {
+      return;
+    }
+    final bool stationChanged = _stationId != stationId;
+    _stationId = stationId;
+    _uid = uid;
+    _visibilityMode = visibilityMode;
+
+    if (stationChanged || stationId.isEmpty) {
+      _sub?.cancel();
+      _sub = null;
+      _records = [];
+      _scheduleNotify();
+    }
   }
 
   void seedDemoRecords(List<ModuleRecord> demoRecords) {
@@ -90,7 +97,10 @@ class BaseModuleProvider extends ChangeNotifier {
     super.dispose();
   }
 
-  List<ModuleRecord> get records => _records;
+  List<ModuleRecord> get records {
+    ensureSubscribed();
+    return _records;
+  }
   int get totalCount => _records.length;
   int get openCount => _records.where((r) => r.status == 'Open').length;
   int get activeCount => _records.where((r) => r.status == 'Active').length;

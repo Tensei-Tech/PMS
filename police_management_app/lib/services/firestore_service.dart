@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import '../modules/core/models/base_record.dart';
 import '../models/user_model.dart';
 import '../utils/pending_approvals_scope.dart';
+import '../utils/read_counter.dart';
 
 class FirestoreService {
   FirebaseFirestore get _db => FirebaseFirestore.instance;
@@ -42,9 +43,11 @@ class FirestoreService {
   Future<UserModel?> getUser(String uid) async {
     if (uid.isEmpty) return null;
     if (_userCache.containsKey(uid)) {
+      ReadCounter.record('getUser [cache hit]', 0);
       return _userCache[uid];
     }
     final doc = await _db.collection(colUsers).doc(uid).get();
+    ReadCounter.record('getUser [$uid]', doc.exists ? 1 : 0);
     if (!doc.exists) return null;
     final user = UserModel.fromMap(doc.data()!, doc.id);
     _userCache[uid] = user;
@@ -55,6 +58,7 @@ class FirestoreService {
   Stream<UserModel?> watchUser(String uid) {
     if (uid.isEmpty) return Stream.value(null);
     return _db.collection(colUsers).doc(uid).snapshots().map((snap) {
+      ReadCounter.record('watchUser.snapshot [$uid]', snap.exists ? 1 : 0);
       if (!snap.exists || snap.data() == null) return null;
       return UserModel.fromMap(snap.data()!, snap.id);
     });
@@ -66,6 +70,7 @@ class FirestoreService {
         .where('email', isEqualTo: email.trim().toLowerCase())
         .limit(1)
         .get();
+    ReadCounter.record('getUserByEmail', query.docs.length);
     if (query.docs.isEmpty) return null;
     return UserModel.fromMap(query.docs.first.data(), query.docs.first.id);
   }
@@ -173,6 +178,7 @@ class FirestoreService {
         .limit(100)
         .snapshots()
         .map((snapshot) {
+      ReadCounter.record('getCasesStream[$moduleKey]', snapshot.docs.length);
       final records = snapshot.docs
           .map((doc) => ModuleRecord.fromMap(doc.data(), doc.id))
           .toList();
@@ -233,6 +239,32 @@ class FirestoreService {
     );
   }
 
+  /// One-shot fetch for the dashboard recent cases section.
+  /// Uses a direct cases-collection query instead of 3 merged streams,
+  /// so it only costs 1 Firestore read batch instead of 3 live listeners.
+  Future<List<ModuleRecord>> fetchRecentCasesOnce(
+      int limit, String stationId) async {
+    if (stationId.trim().isEmpty) return const [];
+    try {
+      final snap = await _db
+          .collection(colCases)
+          .where('stationName', isEqualTo: stationId)
+          .orderBy('createdAt', descending: true)
+          .limit(limit)
+          .get();
+      ReadCounter.record('fetchRecentCasesOnce', snap.docs.length);
+      ReadCounter.printSummary('fetchRecentCasesOnce complete');
+      return snap.docs
+          .map((doc) => ModuleRecord.fromMap(doc.data(), doc.id))
+          .where((r) => r.moduleKey != 'form_1_5')
+          .toList();
+    } catch (e) {
+      debugPrint('FirestoreService.fetchRecentCasesOnce failed: $e');
+      return const [];
+    }
+  }
+
+
   Stream<List<ModuleRecord>> getStationCasesStream(String stationId) {
     if (stationId.trim().isEmpty) {
       return Stream.value(const []);
@@ -269,6 +301,7 @@ class FirestoreService {
             .limit(100)
             .snapshots()
             .listen((snap) {
+          ReadCounter.record('getStationCasesStream[cases]', snap.docs.length);
           casesMap.clear();
           for (final doc in snap.docs) {
             casesMap[doc.id] = ModuleRecord.fromMap(doc.data(), doc.id);
@@ -286,6 +319,7 @@ class FirestoreService {
             .limit(100)
             .snapshots()
             .listen((snap) {
+          ReadCounter.record('getStationCasesStream[pending]', snap.docs.length);
           pendingMap.clear();
           for (final doc in snap.docs) {
             pendingMap[doc.id] = ModuleRecord.fromMap(doc.data(), doc.id);
@@ -303,6 +337,7 @@ class FirestoreService {
             .limit(100)
             .snapshots()
             .listen((snap) {
+          ReadCounter.record('getStationCasesStream[disposal]', snap.docs.length);
           disposalMap.clear();
           for (final doc in snap.docs) {
             disposalMap[doc.id] = ModuleRecord.fromMap(doc.data(), doc.id);
@@ -347,6 +382,7 @@ class FirestoreService {
           .collection(colPending)
           .where('stationName', isEqualTo: stationId)
           .get();
+      ReadCounter.record('fetchPendingCasesOnce', snapshot.docs.length);
       final records = snapshot.docs
           .map((doc) => ModuleRecord.fromMap(doc.data(), doc.id))
           .where((r) => r.moduleKey != 'nc')

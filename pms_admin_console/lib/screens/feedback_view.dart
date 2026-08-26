@@ -466,7 +466,7 @@ class _FeedbackViewState extends State<FeedbackView> {
           // Feedback Stream Query & Filter Tabs
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('feedback').snapshots(),
+              stream: FirebaseFirestore.instance.collection('feedback').limit(200).snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
