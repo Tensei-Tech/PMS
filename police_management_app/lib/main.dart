@@ -8,6 +8,8 @@ import 'package:flutter/foundation.dart'; // PLATFORM FIX: Web-only URL strategy
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'utils/perf_tracker.dart';
+import 'utils/read_counter.dart';
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
 import 'providers/theme_provider.dart';
@@ -56,6 +58,8 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 void main() async {
+  PerfTracker.log('1. main() start');
+  ReadCounter.startSession(); // 🔍 Dev: track Firestore reads per session
   WidgetsFlutterBinding.ensureInitialized();
 
   // Catch all Flutter framework errors so they show in console, not white screen.
@@ -74,6 +78,7 @@ void main() async {
 
     // Initialize Firebase (Supports all platforms including Web)
     try {
+      PerfTracker.startOp('Firebase.initializeApp');
       await Future.any([
         Firebase.initializeApp(
           options: DefaultFirebaseOptions.currentPlatform,
@@ -82,6 +87,8 @@ void main() async {
           throw TimeoutException('Firebase initialization timed out');
         }),
       ]);
+      PerfTracker.stopOp('Firebase.initializeApp');
+      PerfTracker.log('2. Firebase.initializeApp() complete');
     } catch (e) {
       debugPrint('[MAIN] Firebase initialization timed out/failed: $e');
     }
@@ -108,13 +115,17 @@ void main() async {
     // Initialize local notifications (calendar reminders)
     // PLATFORM FIX: flutter_local_notifications does not support web.
     if (!kIsWeb) {
+      PerfTracker.startOp('NotificationService.initialize');
       NotificationService().initialize();
+      PerfTracker.stopOp('NotificationService.initialize');
     }
 
     // Initialize FCM push notifications BEFORE runApp
     // so the foreground stream is ready when NotificationProvider starts listening.
     try {
+      PerfTracker.startOp('FcmService.initialize');
       unawaited(FcmService().initialize());
+      PerfTracker.stopOp('FcmService.initialize');
     } catch (e) {
       debugPrint('[MAIN] FCM init failed (non-fatal): $e');
     }
@@ -123,6 +134,7 @@ void main() async {
     debugPrint('[MAIN] Stack: $stack');
   }
 
+  PerfTracker.log('2c. Calling runApp()');
   runApp(
     MultiProvider(
       providers: [

@@ -3,7 +3,6 @@
 
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -22,7 +21,9 @@ class SettingsProvider extends ChangeNotifier {
 
   final FirestoreService _firestore = FirestoreService();
   StreamSubscription<User?>? _authSub;
-  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _prefsRemoteSub;
+  // NOTE: Preferences are fetched once per login via .get() instead of a
+  // permanent .snapshots() stream. They only change when the user explicitly
+  // modifies settings, at which point we push the update to Firestore ourselves.
 
   FontSize get fontSize => _fontSize;
   Locale get locale => _locale;
@@ -68,7 +69,7 @@ class SettingsProvider extends ChangeNotifier {
   SettingsProvider() {
     Future.microtask(() {
       _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
-        _bindRemotePreferencesStream(user);
+        unawaited(_fetchRemotePreferencesOnce(user));
       });
       unawaited(_load());
     });
@@ -76,24 +77,28 @@ class SettingsProvider extends ChangeNotifier {
 
   @override
   void dispose() {
-    _prefsRemoteSub?.cancel();
     _authSub?.cancel();
     super.dispose();
   }
 
-  void _bindRemotePreferencesStream(User? user) {
-    _prefsRemoteSub?.cancel();
-    _prefsRemoteSub = null;
+  /// Fetches remote preferences once per login session (not a live stream).
+  /// Preferences only change when the user explicitly updates them in Settings,
+  /// so a single .get() read on login is sufficient.
+  Future<void> _fetchRemotePreferencesOnce(User? user) async {
     final uid = user?.uid;
     if (uid == null || uid.isEmpty) return;
-
-    _prefsRemoteSub = _firestore.watchUserAppPreferences(uid).listen(
-      (snap) {
-        if (!snap.exists || snap.data() == null) return;
-        unawaited(_applyRemotePreferenceMap(Map<String, dynamic>.from(snap.data()!)));
-      },
-      onError: (_) {},
-    );
+    try {
+      final snap = await _firestore
+          .watchUserAppPreferences(uid)
+          .first
+          .timeout(const Duration(seconds: 5));
+      if (snap.exists && snap.data() != null) {
+        unawaited(
+            _applyRemotePreferenceMap(Map<String, dynamic>.from(snap.data()!)));
+      }
+    } catch (_) {
+      // Non-fatal — local prefs already loaded in _load().
+    }
   }
 
   String _fontSizeStorageString() {

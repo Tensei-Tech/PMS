@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../utils/perf_tracker.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:provider/provider.dart';
@@ -1177,11 +1178,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    PerfTracker.log('7. DashboardScreen.initState()');
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<AuthProvider>().refreshProfileFromFirestore();
+      PerfTracker.log('8. DashboardScreen FIRST FRAME RENDERED');
+      // NOTE: refreshProfileFromFirestore() removed — AuthProvider.watchUser() stream
+      // already provides real-time profile updates, making this extra .get() call redundant.
     });
   }
+
 
   void _onNavTap(int index) {
     if (index == 2) {
@@ -2154,7 +2159,7 @@ class _HomeTab extends StatefulWidget {
 class _HomeTabState extends State<_HomeTab> {
   final FirestoreService _firestore = FirestoreService();
   List<ModuleRecord> _recentRecords = [];
-  StreamSubscription? _recentSub;
+  // _recentSub removed — recent cases now fetched via one-shot .get() instead of a live stream.
 
   Map<String, dynamic> _mapRecordToCaseMap(ModuleRecord r) {
     Color iconColor;
@@ -2650,9 +2655,7 @@ class _HomeTabState extends State<_HomeTab> {
     return results;
   }
 
-  void _initRecentStream() {
-    _recentSub?.cancel();
-    _recentSub = null;
+  Future<void> _initRecentStream() async {
     final activeStation = widget.auth.stationName;
     if (activeStation.isEmpty) {
       if (mounted && _recentRecords.isNotEmpty) {
@@ -2662,8 +2665,11 @@ class _HomeTabState extends State<_HomeTab> {
     }
     if (mounted) setState(() => _recentRecords = []);
 
-    _recentSub =
-        _firestore.getRecentCasesStream(100, activeStation).listen((data) {
+    PerfTracker.startOp('getRecentCasesOnce');
+    try {
+      final data = await _firestore.fetchRecentCasesOnce(100, activeStation);
+      PerfTracker.stopOp('getRecentCasesOnce');
+      PerfTracker.log('9c. fetchRecentCasesOnce received (${data.length} docs)');
       if (!mounted) return;
       final mode = CaseVisibility.resolveFor(widget.auth);
       final filtered = CaseVisibility.filterRecords(
@@ -2672,12 +2678,15 @@ class _HomeTabState extends State<_HomeTab> {
         mode: mode,
       );
       setState(() => _recentRecords = filtered.take(10).toList());
-    });
+      PerfTracker.log('10. DASHBOARD FULLY INTERACTIVE & DATA POPULATED');
+    } catch (e) {
+      PerfTracker.log('9c. fetchRecentCasesOnce error: $e');
+    }
   }
+
 
   @override
   void dispose() {
-    _recentSub?.cancel();
     _searchCtrl.dispose();
     _searchFocusNode.dispose();
     _debounce?.cancel();
@@ -5238,37 +5247,37 @@ class _CalendarTabState extends State<_CalendarTab> {
 
   List<ModuleRecord> _getConsolidatedRecords(BuildContext context) {
     final records = <ModuleRecord>[];
-    records.addAll(context.watch<FormIVProvider>().records);
-    records.addAll(context.watch<FormVIProvider>().records);
-    records.addAll(context.watch<NcProvider>().records);
-    records.addAll(context.watch<PreventiveProvider>().records);
-    records.addAll(context.watch<AdProvider>().records);
-    records.addAll(context.watch<MissingProvider>().records);
-    records.addAll(context.watch<KidnappingProvider>().records);
-    records.addAll(context.watch<TheftProvider>().records);
-    records.addAll(context.watch<SandTheftProvider>().records);
-    records.addAll(context.watch<HurtProvider>().records);
-    records.addAll(context.watch<PocsoProvider>().records);
-    records.addAll(context.watch<PassportProvider>().records);
-    records.addAll(context.watch<TwoFourWheelerProvider>().records);
-    records.addAll(context.watch<ArrestedProvider>().records);
-    records.addAll(context.watch<AbscondedProvider>().records);
-    records.addAll(context.watch<CrimeWomenProvider>().records);
-    records.addAll(context.watch<JuvenileProvider>().records);
-    records.addAll(context.watch<VictimProvider>().records);
-    records.addAll(context.watch<AccidentProvider>().records);
-    records.addAll(context.watch<TrafficProvider>().records);
-    records.addAll(context.watch<ApplicationProvider>().records);
-    records.addAll(context.watch<SamWarrantProvider>().records);
-    records.addAll(context.watch<MuddemalProvider>().records);
-    records.addAll(context.watch<BnssProvider>().records);
-    records.addAll(context.watch<NdpsProvider>().records);
-    records.addAll(context.watch<GowansProvider>().records);
-    records.addAll(context.watch<ItActProvider>().records);
-    records.addAll(context.watch<McocaProvider>().records);
-    records.addAll(context.watch<UapaProvider>().records);
-    records.addAll(context.watch<MpdaProvider>().records);
-    records.addAll(context.watch<CoinProvider>().records);
+    records.addAll(context.read<FormIVProvider>().records);
+    records.addAll(context.read<FormVIProvider>().records);
+    records.addAll(context.read<NcProvider>().records);
+    records.addAll(context.read<PreventiveProvider>().records);
+    records.addAll(context.read<AdProvider>().records);
+    records.addAll(context.read<MissingProvider>().records);
+    records.addAll(context.read<KidnappingProvider>().records);
+    records.addAll(context.read<TheftProvider>().records);
+    records.addAll(context.read<SandTheftProvider>().records);
+    records.addAll(context.read<HurtProvider>().records);
+    records.addAll(context.read<PocsoProvider>().records);
+    records.addAll(context.read<PassportProvider>().records);
+    records.addAll(context.read<TwoFourWheelerProvider>().records);
+    records.addAll(context.read<ArrestedProvider>().records);
+    records.addAll(context.read<AbscondedProvider>().records);
+    records.addAll(context.read<CrimeWomenProvider>().records);
+    records.addAll(context.read<JuvenileProvider>().records);
+    records.addAll(context.read<VictimProvider>().records);
+    records.addAll(context.read<AccidentProvider>().records);
+    records.addAll(context.read<TrafficProvider>().records);
+    records.addAll(context.read<ApplicationProvider>().records);
+    records.addAll(context.read<SamWarrantProvider>().records);
+    records.addAll(context.read<MuddemalProvider>().records);
+    records.addAll(context.read<BnssProvider>().records);
+    records.addAll(context.read<NdpsProvider>().records);
+    records.addAll(context.read<GowansProvider>().records);
+    records.addAll(context.read<ItActProvider>().records);
+    records.addAll(context.read<McocaProvider>().records);
+    records.addAll(context.read<UapaProvider>().records);
+    records.addAll(context.read<MpdaProvider>().records);
+    records.addAll(context.read<CoinProvider>().records);
     return records;
   }
 

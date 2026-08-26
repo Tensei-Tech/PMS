@@ -13,6 +13,7 @@ import '../l10n/app_localizations.dart';
 import '../providers/auth_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/biometric_service.dart';
+import '../utils/perf_tracker.dart';
 import '../services/lockout_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/app_constants.dart';
@@ -254,6 +255,8 @@ class _LoginScreenState extends State<LoginScreen>
     }
 
     if (!_formKey.currentState!.validate()) return;
+    PerfTracker.reset('LOGIN_BUTTON_CLICKED');
+    PerfTracker.log('3. User clicked login button');
     setState(() => _isLoading = true);
 
     final auth = context.read<AuthProvider>();
@@ -273,6 +276,7 @@ class _LoginScreenState extends State<LoginScreen>
     if (!mounted) return;
 
     if (loginError == null) {
+      PerfTracker.log('6. Auth succeeded, initiating Navigator route transition to DashboardScreen');
       setState(() => _isLoading = false);
       Navigator.pushAndRemoveUntil(
         context,
