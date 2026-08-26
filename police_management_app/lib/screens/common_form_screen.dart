@@ -1050,6 +1050,7 @@ class _CommonFormScreenState extends State<CommonFormScreen> {
     } else {
       final form = _formKey.currentState;
       if (form == null) return;
+      if (!form.validate()) return;
       doc = commonFormDocumentMapFromState(form);
     }
 
