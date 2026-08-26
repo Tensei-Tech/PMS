@@ -3,8 +3,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
+import '../../../providers/auth_provider.dart';
 import '../../../utils/app_constants.dart';
+import '../../../utils/crime_detail_pdf.dart';
 import '../../../widgets/base_form/base_form.dart';
 
 // ── Palette (matches nc_form.dart / common_form.dart) ─────────────────────────
@@ -348,6 +351,25 @@ class MissingFormState extends State<MissingForm> {
     _inCameraTime.clear();
     saveBarText = 'All changes unsaved';
     setState(() {});
+  }
+
+  /// Generates and previews Crime Detail Form.
+  Future<void> generateCrimeDetailForm() async {
+    try {
+      final doc = buildDocumentMap();
+      String? station;
+      try {
+        final auth = context.read<AuthProvider>();
+        station = auth.stationName;
+      } catch (_) {}
+      await generateAndPreviewCrimeDetailFromMap(context, doc, stationName: station);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to generate Crime Detail Form: $e')),
+        );
+      }
+    }
   }
 
   void _onWordCapChanged(TextEditingController c, void Function(int) setCt) {
@@ -714,19 +736,24 @@ class MissingFormState extends State<MissingForm> {
     );
   }
 
-  Widget _addBtn(String label, VoidCallback onTap) => Align(
-        alignment: Alignment.centerRight,
-        child: TextButton.icon(
-          onPressed: onTap,
-          icon: const Icon(Icons.add, size: 14),
-          label: Text(label, style: const TextStyle(fontSize: 11)),
-          style: TextButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            foregroundColor: _kTeal,
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
+  Widget _addBtn(String label, VoidCallback onTap) {
+    final cleanLabel = label.startsWith('+ ')
+        ? label.substring(2)
+        : (label.startsWith('+') ? label.substring(1).trim() : label);
+    return Align(
+      alignment: Alignment.centerRight,
+      child: TextButton.icon(
+        onPressed: onTap,
+        icon: const Icon(Icons.add_rounded, size: 14),
+        label: Text(cleanLabel, style: const TextStyle(fontSize: 11)),
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          foregroundColor: _kTeal,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
-      );
+      ),
+    );
+  }
 
   Widget _emptyBox(String t) => Container(
         width: double.infinity,
@@ -1353,6 +1380,10 @@ class MissingFormState extends State<MissingForm> {
                   const SizedBox(width: 6),
                   _barBtn(
                       'Save Draft', Icons.save_outlined, saveDraft, _kTeal),
+                  const SizedBox(width: 6),
+                  _barBtn(
+                      'Generate Crime Detail Form', Icons.description_outlined,
+                      generateCrimeDetailForm, const Color(0xFF1E3A8A)),
                 ],
               ),
             ),

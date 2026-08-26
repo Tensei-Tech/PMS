@@ -27,6 +27,201 @@ Future<void> previewCrimeDetailPdf(
   }
 }
 
+/// Maps standard CommonForm / NC / Missing form fields into the Crime Detail Form document map.
+Map<String, dynamic> mapCommonFormToCrimeDetail(
+  Map<String, dynamic> formMap, {
+  String? stationName,
+}) {
+  final regDateStr = formMap['regDate']?.toString().trim() ?? '';
+  String day = '';
+  String month = '';
+  String year = '';
+  if (regDateStr.isNotEmpty) {
+    final firstPart = regDateStr.split(' ')[0];
+    final parts = firstPart.split(RegExp(r'[-/]'));
+    if (parts.length >= 3) {
+      if (parts[0].length == 4) {
+        year = parts[0];
+        month = parts[1];
+        day = parts[2];
+      } else {
+        day = parts[0];
+        month = parts[1];
+        year = parts[2];
+      }
+    }
+  }
+  if (year.isEmpty) {
+    year = DateTime.now().year.toString();
+  }
+
+  final crNoRaw = formMap['crNo']?.toString().trim() ??
+      formMap['ncNumber']?.toString().trim() ??
+      formMap['missingNumber']?.toString().trim() ??
+      '';
+  String firNo = crNoRaw;
+  String firYearSuffix = '/$year';
+  if (crNoRaw.contains('/')) {
+    final s = crNoRaw.split('/');
+    firNo = s[0].trim();
+    if (s.length > 1 && s[1].trim().isNotEmpty) {
+      firYearSuffix = '/${s[1].trim()}';
+    }
+  }
+
+  final charges = formMap['charges'];
+  final List<String> actsList = [];
+  if (charges is Map) {
+    for (final v in charges.values) {
+      if (v is Map) {
+        final act = v['act']?.toString().trim() ?? '';
+        final secs = v['sections'];
+        if (secs is List && secs.isNotEmpty) {
+          actsList.add('$act ${secs.join(', ')}');
+        } else if (act.isNotEmpty) {
+          actsList.add(act);
+        }
+      }
+    }
+  } else if (charges is List) {
+    for (final v in charges) {
+      if (v is Map) {
+        final act = v['act']?.toString().trim() ?? '';
+        final secs = v['sections'];
+        if (secs is List && secs.isNotEmpty) {
+          actsList.add('$act ${secs.join(', ')}');
+        } else if (act.isNotEmpty) {
+          actsList.add(act);
+        }
+      }
+    }
+  }
+  final actSectionStr = actsList.join('; ');
+
+  final comp = formMap['complainant'] is Map
+      ? Map<String, dynamic>.from(formMap['complainant'])
+      : {};
+  final compName = comp['name']?.toString().trim() ??
+      formMap['informantName']?.toString().trim() ??
+      '';
+
+  final spotVillage = formMap['spotVillage']?.toString().trim() ??
+      formMap['placeOfIncident']?.toString().trim() ??
+      '';
+  final spotArea = formMap['spotArea']?.toString().trim() ?? '';
+  final spotAddress = formMap['spotAddress']?.toString().trim() ?? '';
+  final fullSpot = [spotVillage, spotArea, spotAddress]
+      .where((s) => s.isNotEmpty)
+      .join(', ');
+
+  final List<Map<String, dynamic>> victims = [];
+  if (compName.isNotEmpty) {
+    victims.add({
+      'fullName': compName,
+      'dob': comp['age']?.toString().trim() ?? '',
+      'sex': comp['gender']?.toString().trim() ?? 'Male',
+      'nationality': 'Indian',
+      'religion': comp['religion']?.toString().trim() ?? '',
+      'scSt': comp['caste']?.toString().trim() ?? '',
+      'occupation': comp['occ']?.toString().trim() ?? '',
+      'address': fullSpot,
+      'injury': '',
+      'means': '',
+    });
+  }
+
+  final seizures = formMap['seizures'];
+  final List<String> seizureList = [];
+  if (seizures is List) {
+    for (final s in seizures) {
+      if (s is Map) {
+        final d = s['desc']?.toString().trim() ?? '';
+        if (d.isNotEmpty) seizureList.add(d);
+      }
+    }
+  }
+  final seizureDesc = seizureList.join('\n');
+
+  final caseResp = formMap['caseResponsibility'] is Map
+      ? Map<String, dynamic>.from(formMap['caseResponsibility'])
+      : {};
+  final ioName = caseResp['ioName']?.toString().trim() ??
+      formMap['ioName']?.toString().trim() ??
+      '';
+  final ioRank = caseResp['ioDesig']?.toString().trim() ??
+      formMap['ioRank']?.toString().trim() ??
+      '';
+
+  final procDates = formMap['proceduralDates'] is Map
+      ? Map<String, dynamic>.from(formMap['proceduralDates'])
+      : {};
+  final spotPanchnamaDt =
+      procDates['spotPanchnama']?.toString().trim() ?? regDateStr;
+
+  return {
+    'district': stationName ?? '',
+    'ps': stationName ?? '',
+    'year': year,
+    'firNo': firNo,
+    'firYearSuffix': firYearSuffix,
+    'dateDay': day,
+    'dateMonth': month,
+    'dateYear': year,
+    'actSection': actSectionStr,
+    'shownByName': compName,
+    'shownByFatherHusband': '',
+    'shownByAddress': fullSpot,
+    'typeOfCrime': actSectionStr,
+    'majorHead': '',
+    'minorHead': '',
+    'method': '',
+    'method1': '',
+    'method2': '',
+    'method3': '',
+    'conveyances': '',
+    'characterAssumed': '',
+    'languageSlang': '',
+    'specialFeature1': '',
+    'specialFeature2': '',
+    'specialFeature3': '',
+    'placeOfOccurrenceType': '',
+    'propertyInvolved': seizureDesc.isNotEmpty ? 'Yes' : 'No',
+    'propertyType1': '',
+    'propertyType2': '',
+    'propertyType3': '',
+    'propertyType4': '',
+    'victims': victims,
+    'motiveOfCrime': '',
+    'placeDescription': fullSpot,
+    'propertyDetails': seizureDesc,
+    'placeDescriptionCont': '',
+    'mapImagePath': '',
+    'physicalEvidence': seizureDesc,
+    'panchnamaDate': spotPanchnamaDt,
+    'panchnamaTime': '',
+    'pancha1Name': '',
+    'pancha1Address': '',
+    'pancha2Name': '',
+    'pancha2Address': '',
+    'pancha1Sig': '',
+    'pancha2Sig': '',
+    'ioName': ioName,
+    'ioRank': ioRank,
+    'ioBuckleNo': '',
+    'panchnamaFormDate': day.isNotEmpty ? '$day/$month/$year' : '',
+  };
+}
+
+/// Convenience method to generate and preview Crime Detail Form from standard form map.
+Future<void> generateAndPreviewCrimeDetailFromMap(
+  BuildContext context,
+  Map<String, dynamic> formMap, {
+  String? stationName,
+}) async {
+  final doc = mapCommonFormToCrimeDetail(formMap, stationName: stationName);
+  await previewCrimeDetailPdf(context, doc);
+}
+
 Future<Uint8List> generateCrimeDetailPdf(Map<String, dynamic> doc) async {
   final pdf = pw.Document();
 
