@@ -83,6 +83,10 @@ const _kReleaseTypes = ['Anticipatory', 'Regular'];
 class CommonForm extends StatefulWidget {
   const CommonForm({
     super.key,
+    this.isMurder = false,
+    this.moduleKey,
+    this.moduleLabel,
+    this.subCategory,
     this.middleSlot,
     this.trailingSlotsBySection,
     this.onDraftSaved,
@@ -91,6 +95,10 @@ class CommonForm extends StatefulWidget {
     this.padding = const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
   });
 
+  final bool isMurder;
+  final String? moduleKey;
+  final String? moduleLabel;
+  final String? subCategory;
   final Widget? middleSlot;
   final Map<int, List<Widget>>? trailingSlotsBySection;
   final ValueChanged<Map<String, dynamic>>? onDraftSaved;
@@ -135,6 +143,28 @@ class CommonFormState extends State<CommonForm> {
   final _compReligion = TextEditingController();
   final _compCaste = TextEditingController();
   final _compPan = TextEditingController();
+
+  // ── Deceased KYC (Murder cases) ───────────────────────────────────────────
+  final _decName = TextEditingController();
+  final _decAge = TextEditingController();
+  String _decGender = 'Male';
+  final _decOcc = TextEditingController();
+  final _decMobile = TextEditingController();
+  final _decAadhaar = TextEditingController();
+  final _decReligion = TextEditingController();
+  final _decCaste = TextEditingController();
+  final _decPan = TextEditingController();
+
+  bool get _isMurderCase {
+    if (widget.isMurder) return true;
+    final key = (widget.moduleKey ?? '').trim().toLowerCase();
+    final label = (widget.moduleLabel ?? '').trim().toLowerCase();
+    final sub = (widget.subCategory ?? '').trim().toLowerCase();
+    return key == 'murder' ||
+        key.contains('murder') ||
+        label.contains('murder') ||
+        sub.contains('murder');
+  }
 
   // ── §5 Accused ────────────────────────────────────────────────────────────
   bool _isUnknown = false;
@@ -243,6 +273,14 @@ class CommonFormState extends State<CommonForm> {
       _compReligion,
       _compCaste,
       _compPan,
+      _decName,
+      _decAge,
+      _decOcc,
+      _decMobile,
+      _decAadhaar,
+      _decReligion,
+      _decCaste,
+      _decPan,
       _unidAge,
       _unidSkin,
       _unidHeight,
@@ -541,6 +579,14 @@ class CommonFormState extends State<CommonForm> {
       _compReligion,
       _compCaste,
       _compPan,
+      _decName,
+      _decAge,
+      _decOcc,
+      _decMobile,
+      _decAadhaar,
+      _decReligion,
+      _decCaste,
+      _decPan,
       _unidAge,
       _unidSkin,
       _unidHeight,
@@ -580,6 +626,7 @@ class CommonFormState extends State<CommonForm> {
     _firPath = null;
     _isUnknown = false;
     _compGender = 'Male';
+    _decGender = 'Male';
     _unidGender = 'Male';
     _ioDesig = 'PSI';
     _regDesig = 'HC';
@@ -718,6 +765,17 @@ class CommonFormState extends State<CommonForm> {
         'caste': _compCaste.text,
         'pan': _compPan.text,
       },
+      'deceased': {
+        'name': _decName.text,
+        'age': _decAge.text,
+        'gender': _decGender,
+        'occ': _decOcc.text,
+        'mobile': _decMobile.text,
+        'aadhaar': _decAadhaar.text,
+        'religion': _decReligion.text,
+        'caste': _decCaste.text,
+        'pan': _decPan.text,
+      },
       'isUnknownUntraced': _isUnknown,
       'accused': pplRows(_accused),
       'suspectedAccused': pplRows(_suspected),
@@ -841,6 +899,20 @@ class CommonFormState extends State<CommonForm> {
       _compReligion.text = _s(comp['religion']);
       _compCaste.text = _s(comp['caste']);
       _compPan.text = _s(comp['pan']);
+    }
+
+    final dec = m['deceased'] as Map?;
+    if (dec != null) {
+      _decName.text = _s(dec['name']);
+      _decAge.text = _s(dec['age']);
+      final g = dec['gender']?.toString();
+      if (g != null && _kGenders.contains(g)) _decGender = g;
+      _decOcc.text = _s(dec['occ']);
+      _decMobile.text = _s(dec['mobile']);
+      _decAadhaar.text = _s(dec['aadhaar']);
+      _decReligion.text = _s(dec['religion']);
+      _decCaste.text = _s(dec['caste']);
+      _decPan.text = _s(dec['pan']);
     }
 
     _isUnknown = m['isUnknownUntraced'] == true;
@@ -1557,10 +1629,13 @@ class CommonFormState extends State<CommonForm> {
                             startOpen: true,
                           ),
                           _card(3, 'Crime Spot', _s3()),
+                          if (_isMurderCase)
+                            _card(4, 'Deceased KYC', _sDeceasedKyc(),
+                                startOpen: true),
                           if (widget.middleSlot != null) widget.middleSlot!,
-                          _card(4, 'Complainant KYC', _s4()),
+                          _card(_isMurderCase ? 5 : 4, 'Complainant KYC', _s4()),
                           _card(
-                            5,
+                            _isMurderCase ? 6 : 5,
                             'Accused Details',
                             _s5(),
                             action: !_isUnknown
@@ -1568,7 +1643,7 @@ class CommonFormState extends State<CommonForm> {
                                 : null,
                           ),
                           _card(
-                            6,
+                            _isMurderCase ? 7 : 6,
                             'Suspected Accused',
                             _s6(),
                             action: !_isUnknown
@@ -1577,22 +1652,24 @@ class CommonFormState extends State<CommonForm> {
                           ),
                           if (_isUnknown)
                             _card(
-                                7, 'Unidentified Criminal Description', _s7()),
-                          _card(8, 'Case Responsibility', _s8()),
-                          _card(9, 'Arrest & Release Status', _s9()),
-                          _card(10, 'Procedural Details', _s10()),
+                                _isMurderCase ? 8 : 7,
+                                'Unidentified Criminal Description',
+                                _s7()),
+                          _card(_isMurderCase ? 9 : 8, 'Case Responsibility', _s8()),
+                          _card(_isMurderCase ? 10 : 9, 'Arrest & Release Status', _s9()),
+                          _card(_isMurderCase ? 11 : 10, 'Procedural Details', _s10()),
                           _card(
-                            11,
+                            _isMurderCase ? 12 : 11,
                             'Seizure Records',
                             _s11(),
                             action: _addBtn('Add Seized Property', addSeizure),
                           ),
-                          _card(12, 'Technical & Custody', _s12()),
-                          _card(13, 'Preventive & Bonds', _s13()),
-                          _card(14, 'Discharge Status', _s14()),
-                          _card(15, 'Court Filing', _s15()),
-                          _card(16, 'Final Verdict', _s16()),
-                          _card(17, 'Case Scrutiny Pipeline', _s17()),
+                          _card(_isMurderCase ? 13 : 12, 'Technical & Custody', _s12()),
+                          _card(_isMurderCase ? 14 : 13, 'Preventive & Bonds', _s13()),
+                          _card(_isMurderCase ? 15 : 14, 'Discharge Status', _s14()),
+                          _card(_isMurderCase ? 16 : 15, 'Court Filing', _s15()),
+                          _card(_isMurderCase ? 17 : 16, 'Final Verdict', _s16()),
+                          _card(_isMurderCase ? 18 : 17, 'Case Scrutiny Pipeline', _s17()),
                           const SizedBox(height: 120),
                         ],
                       ),
@@ -1828,6 +1905,66 @@ class CommonFormState extends State<CommonForm> {
             _tf('Full Address', _spotAddress,
                 hintText: 'Enter Full Spot Address...', maxLines: 3),
           ]),
+        ],
+      );
+
+  // ── Deceased KYC (Murder cases) ───────────────────────────────────────────
+  Widget _sDeceasedKyc() => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _row([
+            _tf('Name', _decName),
+            _tf(
+              'Age',
+              _decAge,
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(3),
+              ],
+            ),
+          ]),
+          _row([
+            _chipSelector(
+                label: 'Gender',
+                items: _kGenders,
+                selected: _decGender,
+                onSelect: (v) => setState(() => _decGender = v)),
+          ]),
+          const SizedBox(height: 4),
+          _row([
+            _tf('Occupation', _decOcc),
+            _tf(
+              'Mobile Number',
+              _decMobile,
+              keyboardType: TextInputType.phone,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(10),
+              ],
+            ),
+          ]),
+          _row([
+            _tf(
+              'Aadhaar Number',
+              _decAadhaar,
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(16),
+              ],
+            ),
+            _tf(
+              'PAN Number',
+              _decPan,
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
+                LengthLimitingTextInputFormatter(10),
+                _UpperCaseTextFormatter(),
+              ],
+            ),
+          ]),
+          _row([_tf('Religion', _decReligion), _tf('Caste', _decCaste)]),
         ],
       );
 
