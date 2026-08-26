@@ -523,27 +523,9 @@ class _ModuleHubScreenState extends State<ModuleHubScreen> {
                 ),
             ],
           ],
-          const SliverToBoxAdapter(child: SizedBox(height: 100)),
+          const SliverToBoxAdapter(child: SizedBox(height: 32)),
         ],
       ),
-      floatingActionButton: (widget.readOnly || widget.moduleKey == 'detected' || widget.moduleKey == 'undetected' || widget.moduleKey == 'disposal')
-          ? null
-          : FloatingActionButton.extended(
-              onPressed: () => _openNewEntryForm(context),
-              backgroundColor: AppColors.navyDark,
-              elevation: 4,
-              shape: const StadiumBorder(),
-              icon: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
-              label: Text(
-                'Add Case',
-                style: GoogleFonts.poppins(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                  letterSpacing: 0.3,
-                ),
-              ),
-            ),
     );
   }
 
@@ -552,7 +534,8 @@ class _ModuleHubScreenState extends State<ModuleHubScreen> {
       title: widget.moduleLabel,
       subtitle: '$total record${total == 1 ? '' : 's'} registered',
       badgeLabel: widget.moduleLabel.toUpperCase(),
-      onAddPressed: widget.readOnly ? null : () => _openNewEntryForm(context),
+      // onAddPressed: widget.readOnly ? null : () => _openNewEntryForm(context),
+      onAddPressed: null,
       backgroundColor: (widget.moduleKey == 'detected' || widget.moduleKey == 'undetected' || widget.moduleKey == 'disposal') ? AppColors.navyDark : null,
     );
   }
@@ -3360,51 +3343,43 @@ class _ModuleHubScreenState extends State<ModuleHubScreen> {
 
     return Column(
       children: [
-        if (!widget.readOnly) ...[
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => _openNewEntryForm(context),
-                    icon: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
-                    label: Text(
-                      '+ Add New ${widget.moduleLabel} Case',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.navyDark,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: const StadiumBorder(),
-                      elevation: 3,
-                      shadowColor: AppColors.navyDark.withValues(alpha: 0.3),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+        // if (!widget.readOnly) ...[
+        //   Padding(
+        //     padding: const EdgeInsets.only(bottom: 12),
+        //     child: Row(
+        //       children: [
+        //         Expanded(
+        //           child: ElevatedButton.icon(
+        //             onPressed: () => _openNewEntryForm(context),
+        //             icon: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+        //             label: Text(
+        //               'Add New ${widget.moduleLabel} Case',
+        //               style: GoogleFonts.poppins(
+        //                 fontSize: 14,
+        //                 fontWeight: FontWeight.w700,
+        //                 color: Colors.white,
+        //                 letterSpacing: 0.3,
+        //               ),
+        //             ),
+        //             style: ElevatedButton.styleFrom(
+        //               backgroundColor: AppColors.navyDark,
+        //               padding: const EdgeInsets.symmetric(vertical: 12),
+        //               shape: const StadiumBorder(),
+        //               elevation: 3,
+        //               shadowColor: AppColors.navyDark.withValues(alpha: 0.3),
+        //             ),
+        //           ),
+        //         ),
+        //       ],
+        //     ),
+        //   ),
+        // ],
         Row(children: [
           _statCard('Total', total, AppColors.infoBlue, 'All'),
           const SizedBox(width: 8),
           _statCard('Open', open, AppColors.warningOrange, 'Open'),
           const SizedBox(width: 8),
           _statCard('Active', active, AppColors.goldPrimary, 'Active'),
-        ]),
-        const SizedBox(height: 8),
-        Row(children: [
-          _statCard('Resolved', resolved, AppColors.successGreen, 'Resolved'),
-          const SizedBox(width: 8),
-          _statCard('Closed', closed, const Color(0xFF607D8B), 'Closed'),
-          const SizedBox(width: 8),
-          Expanded(child: const SizedBox()),
         ]),
       ],
     );

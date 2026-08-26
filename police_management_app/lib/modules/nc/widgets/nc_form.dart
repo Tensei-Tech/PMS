@@ -2,9 +2,12 @@
 // Standalone NC registration form — patterns duplicated from common_form.dart (unchanged source).
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../../providers/auth_provider.dart';
 import '../../../screens/ad_form_screen.dart' show ACT_DATA;
 import '../../../utils/app_constants.dart';
+import '../../../utils/crime_detail_pdf.dart';
 import '../../../widgets/base_form/base_form.dart';
 import '../../../widgets/voice_dictation_button.dart';
 
@@ -196,6 +199,25 @@ class NcFormState extends State<NcForm> {
     _crNumberIfCharges.clear();
     saveBarText = 'All changes unsaved';
     setState(() {});
+  }
+
+  /// Generates and previews Crime Detail Form.
+  Future<void> generateCrimeDetailForm() async {
+    try {
+      final doc = buildDocumentMap();
+      String? station;
+      try {
+        final auth = context.read<AuthProvider>();
+        station = auth.stationName;
+      } catch (_) {}
+      await generateAndPreviewCrimeDetailFromMap(context, doc, stationName: station);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to generate Crime Detail Form: $e')),
+        );
+      }
+    }
   }
 
   String _registeredDateDdMmYyyy(DateTime d) =>
@@ -727,19 +749,24 @@ class NcFormState extends State<NcForm> {
     );
   }
 
-  Widget _addBtn(String label, VoidCallback onTap) => Align(
-        alignment: Alignment.centerRight,
-        child: TextButton.icon(
-          onPressed: onTap,
-          icon: const Icon(Icons.add, size: 14),
-          label: Text(label, style: const TextStyle(fontSize: 11)),
-          style: TextButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            foregroundColor: _kTeal,
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
+  Widget _addBtn(String label, VoidCallback onTap) {
+    final cleanLabel = label.startsWith('+ ')
+        ? label.substring(2)
+        : (label.startsWith('+') ? label.substring(1).trim() : label);
+    return Align(
+      alignment: Alignment.centerRight,
+      child: TextButton.icon(
+        onPressed: onTap,
+        icon: const Icon(Icons.add_rounded, size: 14),
+        label: Text(cleanLabel, style: const TextStyle(fontSize: 11)),
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          foregroundColor: _kTeal,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
-      );
+      ),
+    );
+  }
 
   Widget _emptyBox(String t) => Container(
         width: double.infinity,
@@ -1255,6 +1282,10 @@ class NcFormState extends State<NcForm> {
                   const SizedBox(width: 6),
                   _barBtn(
                       'Save Draft', Icons.save_outlined, saveDraft, _kTeal),
+                  const SizedBox(width: 6),
+                  _barBtn(
+                      'Generate Crime Detail Form', Icons.description_outlined,
+                      generateCrimeDetailForm, const Color(0xFF1E3A8A)),
                 ],
               ),
             ),
