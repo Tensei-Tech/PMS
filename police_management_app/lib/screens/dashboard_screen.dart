@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:pdf/pdf.dart';
@@ -1602,14 +1603,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               backgroundColor: AppColors.goldPrimary,
                               child: auth.profilePhoto.isNotEmpty
                                   ? ClipOval(
-                                      child: Image.network(
-                                        auth.profilePhoto,
+                                      child: CachedNetworkImage(
+                                        imageUrl: auth.profilePhoto,
                                         fit: BoxFit.cover,
                                         width: avatarRadius * 2,
-                                        height: avatarRadius * 2,
-                                        cacheWidth: 160,
-                                        cacheHeight: 160,
-                                        errorBuilder: (ctx, err, stack) => Text(
+                                        memCacheWidth: 160,
+                                        memCacheHeight: 160,
+                                        errorWidget: (ctx, url, err) => Text(
                                           initial,
                                           style: GoogleFonts.poppins(
                                             fontSize: avatarIconSize * 0.65,
@@ -2342,8 +2342,8 @@ class _HomeTabState extends State<_HomeTab> {
   int? _searchRecordsFingerprint;
   List<SearchResult>? _cachedLiveSearchResults;
 
-  int _carouselPage = 0;
-  final CarouselSliderController _carouselCtrl = CarouselSliderController();
+  // _carouselPage and _carouselCtrl removed — now managed inside _NewsCarouselWidget
+  // to prevent carousel setState from rebuilding the entire HomeTab.
 
   // Tracks the station the recent-cases stream is currently scoped to.
   // The parent passes the SAME AuthProvider instance on every rebuild, so
@@ -2771,7 +2771,6 @@ class _HomeTabState extends State<_HomeTab> {
     _searchCtrl.dispose();
     _searchFocusNode.dispose();
     _debounce?.cancel();
-    _carouselCtrl.stopAutoPlay();
     super.dispose();
   }
 
@@ -2808,7 +2807,8 @@ class _HomeTabState extends State<_HomeTab> {
 
   @override
   Widget build(BuildContext context) {
-    final newsProvider = context.watch<NewsProvider>();
+    // PERF: Do NOT watch NewsProvider here — carousel now owns its own state
+    // inside _NewsCarouselWidget, so news updates don't trigger HomeTab rebuild.
     final size = MediaQuery.of(context).size;
     final isWide = size.width >= Breakpoints.tablet;
 
@@ -2817,11 +2817,40 @@ class _HomeTabState extends State<_HomeTab> {
         .map(_mapRecordToCaseMap)
         .toList();
     final top3Cases = recentCases.take(3).toList();
-    final width = MediaQuery.of(context).size.width;
+    final width = size.width;
     final caseGridCols = width > 1200 ? 3 : (width > 800 ? 2 : 1);
+    // PERF: Only resolve search results when search is actually active.
+    // _resolveLiveSearchResults() watches 35 providers — skip it otherwise.
     final searchResults = _hasActiveSearch
         ? _resolveLiveSearchResults(context)
         : const <SearchResult>[];
+
+    // PERF: Precompute static items for lazy list
+    final staticItems = <Widget>[
+      // Carousel is its own StatefulWidget — its setState won't rebuild HomeTab
+      const _NewsCarouselWidget(),
+      const SizedBox(height: AppSpacing.md),
+      _buildCaseVisibilityBanner(),
+      const SizedBox(height: AppSpacing.sm),
+      // RepaintBoundary: SOS card is static — skip repaint on unrelated updates
+      RepaintBoundary(child: _buildOfficerSosTrigger()),
+      const SizedBox(height: AppSpacing.md),
+      // RepaintBoundary: stats widget has its own streams; isolate its repaints
+      RepaintBoundary(child: DashboardStatsWidget(auth: widget.auth)),
+      const SizedBox(height: AppSpacing.lg),
+      _buildSearchBar(),
+      if (_hasActiveSearch) ...[
+        const SizedBox(height: AppSpacing.md),
+        _buildMatchingModuleTabs(_searchQuery),
+        if (searchResults.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.sm),
+          _buildSearchResults(searchResults),
+        ] else if (_matchingModulesCount(_searchQuery) == 0) ...[
+          const SizedBox(height: AppSpacing.md),
+          _buildNoResults(),
+        ],
+      ],
+    ];
 
     return CustomScrollView(
       physics: const BouncingScrollPhysics(),
@@ -2831,29 +2860,12 @@ class _HomeTabState extends State<_HomeTab> {
             horizontal: isWide ? AppSpacing.xl : AppSpacing.lg,
             vertical: AppSpacing.md,
           ),
+          // PERF: Use SliverChildBuilderDelegate for lazy construction
           sliver: SliverList(
-            delegate: SliverChildListDelegate([
-              _buildNewsCarousel(newsProvider, isWide),
-              const SizedBox(height: AppSpacing.md),
-              _buildCaseVisibilityBanner(),
-              const SizedBox(height: AppSpacing.sm),
-              _buildOfficerSosTrigger(),
-              const SizedBox(height: AppSpacing.md),
-              DashboardStatsWidget(auth: widget.auth),
-              const SizedBox(height: AppSpacing.lg),
-              _buildSearchBar(),
-              if (_hasActiveSearch) ...[
-                const SizedBox(height: AppSpacing.md),
-                _buildMatchingModuleTabs(_searchQuery),
-                if (searchResults.isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.sm),
-                  _buildSearchResults(searchResults),
-                ] else if (_matchingModulesCount(_searchQuery) == 0) ...[
-                  const SizedBox(height: AppSpacing.md),
-                  _buildNoResults(),
-                ],
-              ],
-            ]),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => staticItems[index],
+              childCount: staticItems.length,
+            ),
           ),
         ),
         if (!_hasActiveSearch) ...[
@@ -2861,7 +2873,11 @@ class _HomeTabState extends State<_HomeTab> {
             padding: EdgeInsets.symmetric(
                 horizontal: isWide ? AppSpacing.xl : AppSpacing.lg),
             sliver: SliverToBoxAdapter(
-              child: _buildThreePartClassification(isWide),
+              // RepaintBoundary: classification grid is static constants;
+              // isolate from provider/stream-driven rebuilds above.
+              child: RepaintBoundary(
+                child: _buildThreePartClassification(isWide),
+              ),
             ),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
@@ -2938,114 +2954,6 @@ class _HomeTabState extends State<_HomeTab> {
     );
   }
 
-  Widget _buildNewsCarousel(NewsProvider news, bool isWide) {
-    return Column(
-      children: [
-        RepaintBoundary(
-          child: CarouselSlider.builder(
-            carouselController: _carouselCtrl,
-            itemCount: news.items.length,
-            options: CarouselOptions(
-              height: 160,
-              viewportFraction: 1.0,
-              autoPlay: true,
-              autoPlayInterval: AppTimeouts.carouselInterval,
-              autoPlayAnimationDuration: const Duration(milliseconds: 600),
-              autoPlayCurve: Curves.easeInOut,
-              onPageChanged: (index, reason) =>
-                  setState(() => _carouselPage = index),
-            ),
-            itemBuilder: (context, i, _) {
-              final item = news.items[i];
-              final color = Color(item.iconColorHex);
-              return _newsCard(item, color);
-            },
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        AnimatedSmoothIndicator(
-          activeIndex: _carouselPage,
-          count: news.items.length,
-          effect: ExpandingDotsEffect(
-            dotHeight: 8,
-            dotWidth: 8,
-            activeDotColor: AppColors.navyMid,
-            dotColor: AppColors.navyMid.withValues(alpha: 0.25),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _newsCard(NewsItem item, Color color) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [color, color.withValues(alpha: 0.7)],
-        ),
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        boxShadow: [
-          BoxShadow(
-              color: color.withValues(alpha: 0.35),
-              blurRadius: 16,
-              offset: const Offset(0, 6)),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            child: Icon(item.icon, color: Colors.white, size: 28),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                  ),
-                  child: Text(item.tag,
-                      style: GoogleFonts.poppins(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white)),
-                ),
-                const SizedBox(height: 6),
-                Text(item.title,
-                    style: GoogleFonts.poppins(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis),
-                const SizedBox(height: 4),
-                Text(item.description,
-                    style: GoogleFonts.poppins(
-                        fontSize: 11, color: Colors.white70),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   final FocusNode _searchFocusNode = FocusNode();
 
@@ -4199,6 +4107,140 @@ class _HomeTabState extends State<_HomeTab> {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ── NEWS CAROUSEL WIDGET ──────────────────────────────────────────────────────
+// PERF: Extracted from _HomeTabState so carousel setState is isolated.
+// Before: carousel autoplay tick → setState in _HomeTabState → full rebuild
+//         including context.watch<T>() on 35 providers every tick.
+// After:  carousel autoplay tick → setState in _NewsCarouselWidget only.
+class _NewsCarouselWidget extends StatefulWidget {
+  const _NewsCarouselWidget();
+
+  @override
+  State<_NewsCarouselWidget> createState() => _NewsCarouselWidgetState();
+}
+
+class _NewsCarouselWidgetState extends State<_NewsCarouselWidget> {
+  int _carouselPage = 0;
+  final CarouselSliderController _carouselCtrl = CarouselSliderController();
+
+  @override
+  void dispose() {
+    _carouselCtrl.stopAutoPlay();
+    super.dispose();
+  }
+
+  Widget _newsCard(NewsItem item, Color color) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [color, color.withValues(alpha: 0.7)],
+        ),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        boxShadow: [
+          BoxShadow(
+              color: color.withValues(alpha: 0.35),
+              blurRadius: 16,
+              offset: const Offset(0, 6)),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            child: Icon(item.icon, color: Colors.white, size: 28),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                  child: Text(item.tag,
+                      style: GoogleFonts.poppins(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white)),
+                ),
+                const SizedBox(height: 6),
+                Text(item.title,
+                    style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 4),
+                Text(item.description,
+                    style: GoogleFonts.poppins(
+                        fontSize: 11, color: Colors.white70),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final news = context.watch<NewsProvider>();
+    return Column(
+      children: [
+        RepaintBoundary(
+          child: CarouselSlider.builder(
+            carouselController: _carouselCtrl,
+            itemCount: news.items.length,
+            options: CarouselOptions(
+              height: 160,
+              viewportFraction: 1.0,
+              autoPlay: true,
+              autoPlayInterval: AppTimeouts.carouselInterval,
+              autoPlayAnimationDuration: const Duration(milliseconds: 600),
+              autoPlayCurve: Curves.easeInOut,
+              onPageChanged: (index, reason) =>
+                  setState(() => _carouselPage = index),
+            ),
+            itemBuilder: (context, i, _) {
+              final item = news.items[i];
+              final color = Color(item.iconColorHex);
+              return _newsCard(item, color);
+            },
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        AnimatedSmoothIndicator(
+          activeIndex: _carouselPage,
+          count: news.items.length,
+          effect: ExpandingDotsEffect(
+            dotHeight: 8,
+            dotWidth: 8,
+            activeDotColor: AppColors.navyMid,
+            dotColor: AppColors.navyMid.withValues(alpha: 0.25),
+          ),
+        ),
+      ],
     );
   }
 }
