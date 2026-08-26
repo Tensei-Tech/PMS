@@ -481,7 +481,7 @@ class NcFormState extends State<NcForm> {
     final io = m['investigationOfficer'];
     if (io is Map) {
       final d = _s(io['designation']);
-      if (d.isNotEmpty && PoliceDesignations.formIoAndReg.contains(d)) _ioDesig = d;
+      if (d.isNotEmpty && (PoliceDesignations.ioDesignations.contains(d) || PoliceDesignations.formIoAndReg.contains(d))) _ioDesig = d;
       _ioName.text = _s(io['name']);
     }
     final rb = m['registeredBy'];
@@ -1050,12 +1050,22 @@ class NcFormState extends State<NcForm> {
         ],
       );
 
+  List<String> get _ioDesignationsList {
+    try {
+      final auth = context.read<AuthProvider>();
+      final unit = SeniorOfficerRoles.impliedUnitType(auth.designation);
+      return PoliceDesignations.ioDesignationsForUnit(unit);
+    } catch (_) {
+      return PoliceDesignations.ioDesignations;
+    }
+  }
+
   Widget _sIo() => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _chipSelector(
             label: 'IO Designation',
-            items: PoliceDesignations.formIoAndReg,
+            items: _ioDesignationsList,
             selected: _ioDesig,
             onSelect: (v) => setState(() => _ioDesig = v),
           ),
@@ -1284,7 +1294,7 @@ class NcFormState extends State<NcForm> {
                       'Save Draft', Icons.save_outlined, saveDraft, _kTeal),
                   const SizedBox(width: 6),
                   _barBtn(
-                      'Generate Crime Detail Form', Icons.description_outlined,
+                      'Generate Crime Detail PDF', Icons.description_outlined,
                       generateCrimeDetailForm, const Color(0xFF1E3A8A)),
                 ],
               ),

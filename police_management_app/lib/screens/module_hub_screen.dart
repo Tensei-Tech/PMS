@@ -481,50 +481,75 @@ class _ModuleHubScreenState extends State<ModuleHubScreen> {
     return Scaffold(
       backgroundColor: AppColors.lightBg,
       appBar: _buildAppBar(context, totalCount),
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          if (widget.moduleKey == 'monthly') ...[
-            // Monthly module is report-only (no records section).
-            SliverToBoxAdapter(child: _buildMonthlyReport(context, allRecords)),
-          ] else if (widget.moduleKey == 'pending') ...[
-            SliverToBoxAdapter(child: _buildPendingModuleReportOnly(context)),
-          ] else if (widget.moduleLabel == 'Forms' &&
-              widget.moduleKey == 'form_1_5') ...[
-            SliverToBoxAdapter(child: _buildFormsModuleReportOnly(context)),
-          ] else ...[
-            if (widget.moduleKey == 'disposal')
-              SliverToBoxAdapter(child: _buildModuleTabs()),
-            if (_isReportMode && widget.moduleKey == 'disposal')
-              SliverToBoxAdapter(
-                  child: _buildMonthlyReport(context, allRecords))
-            else ...[
-              if (widget.moduleKey != 'form_1_5' && widget.moduleKey != 'disposal') ...[
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.md),
-                    child: _buildStatsRow(openCount, activeCount, resolvedCount,
-                        closedCount, totalCount),
-                  ),
-                ),
-              ],
-              if (filtered.isEmpty)
-                SliverToBoxAdapter(child: _buildEmpty())
-              else
-                SliverPadding(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (ctx, i) => _buildCard(ctx, filtered[i]),
-                      childCount: filtered.length,
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1400),
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              if (widget.moduleKey == 'monthly') ...[
+                // Monthly module is report-only (no records section).
+                SliverToBoxAdapter(child: _buildMonthlyReport(context, allRecords)),
+              ] else if (widget.moduleKey == 'pending') ...[
+                SliverToBoxAdapter(child: _buildPendingModuleReportOnly(context)),
+              ] else if (widget.moduleLabel == 'Forms' &&
+                  widget.moduleKey == 'form_1_5') ...[
+                SliverToBoxAdapter(child: _buildFormsModuleReportOnly(context)),
+              ] else ...[
+                if (widget.moduleKey == 'disposal')
+                  SliverToBoxAdapter(child: _buildModuleTabs()),
+                if (_isReportMode && widget.moduleKey == 'disposal')
+                  SliverToBoxAdapter(
+                      child: _buildMonthlyReport(context, allRecords))
+                else ...[
+                  if (widget.moduleKey != 'form_1_5' && widget.moduleKey != 'disposal') ...[
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.md),
+                        child: _buildStatsRow(openCount, activeCount, resolvedCount,
+                            closedCount, totalCount),
+                      ),
                     ),
-                  ),
-                ),
+                  ],
+                  if (filtered.isEmpty)
+                    SliverToBoxAdapter(child: _buildEmpty())
+                  else
+                    SliverPadding(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      sliver: SliverLayoutBuilder(
+                        builder: (context, constraints) {
+                          final width = constraints.crossAxisExtent;
+                          final cols = width > 1300 ? 3 : (width > 680 ? 2 : 1);
+                          if (cols == 1) {
+                            return SliverList(
+                              delegate: SliverChildBuilderDelegate(
+                                (ctx, i) => _buildCard(ctx, filtered[i]),
+                                childCount: filtered.length,
+                              ),
+                            );
+                          }
+                          return SliverGrid(
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: cols,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                              mainAxisExtent: 220,
+                            ),
+                            delegate: SliverChildBuilderDelegate(
+                              (ctx, i) => _buildCard(ctx, filtered[i], inGrid: true),
+                              childCount: filtered.length,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ],
+              const SliverToBoxAdapter(child: SizedBox(height: 32)),
             ],
-          ],
-          const SliverToBoxAdapter(child: SizedBox(height: 32)),
-        ],
+          ),
+        ),
       ),
     );
   }
@@ -3508,7 +3533,7 @@ class _ModuleHubScreenState extends State<ModuleHubScreen> {
     );
   }
 
-  Widget _buildCard(BuildContext ctx, ModuleRecord record) {
+  Widget _buildCard(BuildContext ctx, ModuleRecord record, {bool inGrid = false}) {
     if (widget.readOnly) {
       return ReadOnlyModuleRecordHubCard(record: record);
     }
@@ -3516,26 +3541,26 @@ class _ModuleHubScreenState extends State<ModuleHubScreen> {
         record.subCategory == 'Crime Detail Form' ||
         record.subCategory == 'Property & Seizure Form';
     if (isDetailFormHistory) {
-      return Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 480),
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(color: AppColors.lightBorder),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              )
-            ],
-          ),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      return Container(
+        margin: inGrid ? EdgeInsets.zero : const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: AppColors.lightBorder),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            )
+          ],
+        ),
+        child: Column(
+          children: [
+            Expanded(
+              flex: inGrid ? 1 : 0,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -3543,6 +3568,8 @@ class _ModuleHubScreenState extends State<ModuleHubScreen> {
                     Text(
                       record.title,
                       textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.poppins(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -3581,52 +3608,52 @@ class _ModuleHubScreenState extends State<ModuleHubScreen> {
                   ],
                 ),
               ),
-              Container(height: 1, color: AppColors.lightBorder),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _actionBtn(
-                      Icons.visibility_rounded,
-                      'View',
-                      AppColors.goldPrimary,
-                      () {
-                        Navigator.push(
-                          ctx,
-                          AppTheme.fadeSlideRoute(
-                            page: CommonFormScreen(
-                              moduleLabel: record.firestoreCategoryDisplayName,
-                              moduleKey: widget.moduleKey,
-                              subCategory: record.subCategory,
-                              existingRecord: record,
-                              readOnly: true,
-                            ),
+            ),
+            Container(height: 1, color: AppColors.lightBorder),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _actionBtn(
+                    Icons.visibility_rounded,
+                    'View',
+                    AppColors.goldPrimary,
+                    () {
+                      Navigator.push(
+                        ctx,
+                        AppTheme.fadeSlideRoute(
+                          page: CommonFormScreen(
+                            moduleLabel: record.firestoreCategoryDisplayName,
+                            moduleKey: widget.moduleKey,
+                            subCategory: record.subCategory,
+                            existingRecord: record,
+                            readOnly: true,
                           ),
-                        );
-                      },
-                    ),
-                    Container(
-                      width: 1,
-                      height: 24,
-                      color: AppColors.lightBorder,
-                    ),
-                    _actionBtn(
-                      Icons.picture_as_pdf_rounded,
-                      'PDF',
-                      AppColors.dangerRed,
-                      () {
-                        runWithPdfAuthGate(
-                          ctx,
-                          () => ModulePdfHelper.generatePdf(record),
-                        );
-                      },
-                    ),
-                  ],
-                ),
+                        ),
+                      );
+                    },
+                  ),
+                  Container(
+                    width: 1,
+                    height: 24,
+                    color: AppColors.lightBorder,
+                  ),
+                  _actionBtn(
+                    Icons.picture_as_pdf_rounded,
+                    'PDF',
+                    AppColors.dangerRed,
+                    () {
+                      runWithPdfAuthGate(
+                        ctx,
+                        () => ModulePdfHelper.generatePdf(record),
+                      );
+                    },
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
     }
@@ -3646,7 +3673,7 @@ class _ModuleHubScreenState extends State<ModuleHubScreen> {
       sc = _statusColor(record.status);
     }
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: inGrid ? EdgeInsets.zero : const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -3658,99 +3685,115 @@ class _ModuleHubScreenState extends State<ModuleHubScreen> {
               offset: const Offset(0, 3))
         ],
       ),
-      child: Column(children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: isDetectedCard
-              ? BoxDecoration(
-                  color: AppColors.navyDark.withValues(alpha: 0.06),
-                  borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(AppRadius.lg)),
-                )
-              : null,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                      color: AppColors.infoBlue.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(4)),
-                  child: Text(record.caseNumber,
-                      style: GoogleFonts.poppins(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.infoBlue)),
-                ),
-                const Spacer(),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: sc.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: sc.withValues(alpha: 0.3)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            flex: inGrid ? 1 : 0,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+              decoration: isDetectedCard
+                  ? BoxDecoration(
+                      color: AppColors.navyDark.withValues(alpha: 0.06),
+                      borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(AppRadius.lg)),
+                    )
+                  : null,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: inGrid ? MainAxisAlignment.spaceBetween : MainAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    Container(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                          color: AppColors.infoBlue.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(4)),
+                      child: Text(record.caseNumber,
+                          style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.infoBlue)),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: sc.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: sc.withValues(alpha: 0.3)),
+                      ),
+                      child: Text(displayStatus,
+                          style: GoogleFonts.poppins(
+                              fontSize: 9, fontWeight: FontWeight.w700, color: sc)),
+                    ),
+                  ]),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 6),
+                      Text(record.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.navyDark)),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          record.firestoreCategoryDisplayName,
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.goldPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (record.description.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(record.description,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.poppins(
+                                fontSize: 11, color: AppColors.lightSubText)),
+                      ],
+                    ],
                   ),
-                  child: Text(displayStatus,
-                      style: GoogleFonts.poppins(
-                          fontSize: 9, fontWeight: FontWeight.w700, color: sc)),
-                ),
-              ]),
-              const SizedBox(height: 10),
-              Text(record.title,
-                  style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.navyDark)),
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  record.firestoreCategoryDisplayName,
-                  style: GoogleFonts.poppins(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.goldPrimary,
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Row(children: [
+                      Icon(Icons.person_rounded,
+                          size: 13, color: AppColors.lightSubText),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(record.assignedOfficer,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.poppins(
+                                fontSize: 11, color: AppColors.lightSubText)),
+                      ),
+                      Icon(Icons.calendar_today_rounded,
+                          size: 13, color: AppColors.lightSubText),
+                      const SizedBox(width: 4),
+                      Text(DateFormat('dd MMM yyyy').format(record.incidentDate),
+                          style: GoogleFonts.poppins(
+                              fontSize: 11, color: AppColors.lightSubText)),
+                    ]),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                ],
               ),
-              if (record.description.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                Text(record.description,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.poppins(
-                        fontSize: 12, color: AppColors.lightSubText)),
-              ],
-              const SizedBox(height: 10),
-              Row(children: [
-                Icon(Icons.person_rounded,
-                    size: 13, color: AppColors.lightSubText),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(record.assignedOfficer,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.poppins(
-                          fontSize: 11, color: AppColors.lightSubText)),
-                ),
-                Icon(Icons.calendar_today_rounded,
-                    size: 13, color: AppColors.lightSubText),
-                const SizedBox(width: 4),
-                Text(DateFormat('dd MMM yyyy').format(record.incidentDate),
-                    style: GoogleFonts.poppins(
-                        fontSize: 11, color: AppColors.lightSubText)),
-              ]),
-            ],
+            ),
           ),
-        ),
-        Container(height: 1, color: AppColors.lightBorder),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-          child: Row(
+          Container(height: 1, color: AppColors.lightBorder),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                       _actionBtn(
