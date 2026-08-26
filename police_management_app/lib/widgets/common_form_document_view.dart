@@ -93,8 +93,8 @@ class _CaseDetailLayoutScope extends InheritedWidget {
 }
 
 const Map<String, String> _kProcLabels = {
+  'chkPanchSpot': 'Spot Panchanama',
   'chkMemo': 'Memorandum Panchanama',
-  'chkPanchSpot': 'Panchanama Spot',
   'chkInquest': 'Inquest',
   'chkIdent': 'Identification',
   'chkSearch': 'Search',
@@ -1059,7 +1059,11 @@ class CommonFormDocumentView extends StatelessWidget {
             );
           }),
           const SizedBox(height: 8),
-          _row('E-shaksh', _v(m['eshakshValue'], or: 'Not set')),
+          _row('e-Sakshya', _v(m['eshakshValue'], or: 'Not set')),
+          if (m['eshakshValue'] == 'yes' && _v(m['eshakshDate']).isNotEmpty)
+            _row('e-Sakshya Date', _v(m['eshakshDate'])),
+          if (m['eshakshValue'] == 'no' && _v(m['eshakshReason']).isNotEmpty)
+            _row('Reason for No e-Sakshya', _v(m['eshakshReason'])),
         ],
       ),
       _sectionShell(
@@ -1114,10 +1118,19 @@ class CommonFormDocumentView extends StatelessWidget {
         'PREVENTIVE & BONDS',
         accent,
         _pairedSimpleFields(context, [
-          (label: 'Preventive Action', value: _v(prev['action'], or: 'Not set'), fullWidth: false),
-          (label: 'Outward Number', value: _v(prev['outwardNumber']), fullWidth: false),
-          (label: 'Bond Date', value: _v(prev['bondDate']), fullWidth: false),
-          (label: 'Bond Cancellation Date', value: _v(prev['bondCancellation']), fullWidth: false),
+          (label: 'Preventive Bonds', value: _v(prev['hasBond'], or: (_v(prev['bondDate']).isNotEmpty ? 'Yes' : 'No')), fullWidth: false),
+          if (prev['hasBond'] == 'yes' || _v(prev['bondDate']).isNotEmpty || _v(prev['reason']).isNotEmpty) ...[
+            (label: 'Bond Date', value: _v(prev['bondDate']), fullWidth: false),
+            if (_v(prev['outwardNumber']).isNotEmpty)
+              (label: 'Outward Number', value: _v(prev['outwardNumber']), fullWidth: false),
+            if (_v(prev['reason']).isNotEmpty)
+              (label: 'Reason / Remarks', value: _v(prev['reason']), fullWidth: true),
+          ],
+          if (_v(prev['actionType']).isNotEmpty) ...[
+            (label: 'Preventive Action', value: _v(prev['actionType']), fullWidth: false),
+            if (_v(prev['actionDateTime']).isNotEmpty)
+              (label: 'Action Date & Time', value: _v(prev['actionDateTime']), fullWidth: false),
+          ],
         ]),
       ),
       _sectionShell(
@@ -1133,26 +1146,51 @@ class CommonFormDocumentView extends StatelessWidget {
           else
             ...discharge.entries.map((e) {
               final ok = e.value == true;
+              final name = e.key.toString();
+              final details = (m['dischargeDetails'] as Map?)?[name] as Map?;
+              final date = details?['date']?.toString();
+              final reason = details?['reason']?.toString();
+
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      ok ? Icons.check_circle : Icons.cancel_outlined,
-                      size: 20,
-                      color: ok ? AppColors.successGreen : AppColors.lightSubText,
+                    Row(
+                      children: [
+                        Icon(
+                          ok ? Icons.check_circle : Icons.cancel_outlined,
+                          size: 20,
+                          color: ok ? AppColors.successGreen : AppColors.lightSubText,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '$name — ${ok ? 'Discharged' : 'Not discharged'}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              color: ok ? AppColors.navyDark : AppColors.lightSubText,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '${e.key} — ${ok ? 'Discharged' : 'Not discharged'}',
-                        style: GoogleFonts.poppins(
-                          fontSize: 13,
-                          color: ok ? AppColors.navyDark : AppColors.lightSubText,
-                          fontWeight: FontWeight.w600,
+                    if (ok && ((date != null && date.isNotEmpty) || (reason != null && reason.isNotEmpty)))
+                      Padding(
+                        padding: const EdgeInsets.only(left: 28, top: 4),
+                        child: Text(
+                          [
+                            if (date != null && date.isNotEmpty) 'Date: $date',
+                            if (reason != null && reason.isNotEmpty) 'Reason: $reason',
+                          ].join(' | '),
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: AppColors.lightSubText,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               );
@@ -1161,33 +1199,15 @@ class CommonFormDocumentView extends StatelessWidget {
       ),
       _sectionShell(
         15,
-        'COURT FILING',
+        'CHARGE SHEET',
         accent,
         _pairedSimpleFields(context, [
           (label: 'Charge Sheet No.', value: _v(court['chargeSheetNumber']), fullWidth: false),
-          (label: 'CC / ST Number', value: _v(court['ccStNumber']), fullWidth: false),
-          (label: 'Final Summary', value: _v(court['finalSummary'], or: 'Not set'), fullWidth: false),
-          (label: 'Quashed by High Court', value: _v(court['quashedHighCourt']), fullWidth: false),
+          (label: 'Date of Charge Sheet', value: _v(court['chargeSheetDate']), fullWidth: false),
         ]),
       ),
       _sectionShell(
         16,
-        'FINAL VERDICT',
-        accent,
-        [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _verdictColumn(
-                  '✓ ACQUITTED', acquitted, AppColors.successGreen),
-              const SizedBox(width: 10),
-              _verdictColumn('✗ CONVICTED', convicted, AppColors.dangerRed),
-            ],
-          ),
-        ],
-      ),
-      _sectionShell(
-        17,
         'CASE SCRUTINY PIPELINE',
         accent,
         [
@@ -1225,6 +1245,28 @@ class CommonFormDocumentView extends StatelessWidget {
               fullWidth: false
             ),
           ]),
+        ],
+      ),
+      _sectionShell(
+        17,
+        'FINAL VERDICT',
+        accent,
+        [
+          ..._pairedSimpleFields(context, [
+            (label: 'CC / ST Number', value: _v(court['ccStNumber']), fullWidth: false),
+            (label: 'Final Summary', value: _v(court['finalSummary'], or: 'Not set'), fullWidth: false),
+            (label: 'Quashed by High Court', value: _v(court['quashedHighCourt']), fullWidth: false),
+          ]),
+          const SizedBox(height: 10),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _verdictColumn(
+                  '✓ ACQUITTED', acquitted, AppColors.successGreen),
+              const SizedBox(width: 10),
+              _verdictColumn('✗ CONVICTED', convicted, AppColors.dangerRed),
+            ],
+          ),
         ],
       ),
     ];

@@ -1086,7 +1086,7 @@ class MissingFormState extends State<MissingForm> {
     final io = data['investigationOfficer'];
     if (io is Map) {
       final d = io['designation']?.toString();
-      if (d != null && PoliceDesignations.formIoAndReg.contains(d)) _ioDesig = d;
+      if (d != null && (PoliceDesignations.ioDesignations.contains(d) || PoliceDesignations.formIoAndReg.contains(d))) _ioDesig = d;
       _ioName.text = _str(io['name']);
     }
 
@@ -1353,6 +1353,16 @@ class MissingFormState extends State<MissingForm> {
         ],
       );
 
+  List<String> get _ioDesignationsList {
+    try {
+      final auth = context.read<AuthProvider>();
+      final unit = SeniorOfficerRoles.impliedUnitType(auth.designation);
+      return PoliceDesignations.ioDesignationsForUnit(unit);
+    } catch (_) {
+      return PoliceDesignations.ioDesignations;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
@@ -1382,7 +1392,7 @@ class MissingFormState extends State<MissingForm> {
                       'Save Draft', Icons.save_outlined, saveDraft, _kTeal),
                   const SizedBox(width: 6),
                   _barBtn(
-                      'Generate Crime Detail Form', Icons.description_outlined,
+                      'Generate Crime Detail PDF', Icons.description_outlined,
                       generateCrimeDetailForm, const Color(0xFF1E3A8A)),
                 ],
               ),
@@ -1469,7 +1479,7 @@ class MissingFormState extends State<MissingForm> {
                         children: [
                           _chipSelector(
                             label: 'Designation',
-                            items: PoliceDesignations.formIoAndReg,
+                            items: _ioDesignationsList,
                             selected: _ioDesig,
                             onSelect: (v) => setState(() => _ioDesig = v),
                           ),

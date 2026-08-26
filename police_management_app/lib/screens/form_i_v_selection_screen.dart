@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 import '../modules/core/models/base_record.dart';
 import '../modules/form_iv/providers/form_iv_provider.dart';
 import '../theme/app_theme.dart';
+import '../utils/module_pdf_helper.dart';
+import '../utils/pdf_auth_gate.dart';
 import '../widgets/form_iv_category_button.dart';
 import '../widgets/module_hub_screen_app_bar.dart';
 import '../widgets/read_only_module_record_hub_card.dart';
@@ -110,53 +112,115 @@ class _FormIVSelectionScreenState extends State<FormIVSelectionScreen> {
               ),
             )
           : null,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _CategoryFilterBar(
-            options: _filterOptions,
-            selected: _selectedCategory,
-            onSelected: (value) => setState(() => _selectedCategory = value),
-          ),
-          Expanded(
-            child: visibleRecords.isEmpty
-                ? _EmptyCasesState(
-                    category: _selectedCategory,
-                    readOnly: _readOnly,
-                    onNewCase: _showNewCaseFab ? _onNewCase : null,
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.lg,
-                      AppSpacing.sm,
-                      AppSpacing.lg,
-                      88,
-                    ),
-                    itemCount: visibleRecords.length,
-                    itemBuilder: (context, index) {
-                      final record = visibleRecords[index];
-                      if (_readOnly) {
-                        return ReadOnlyModuleRecordHubCard(record: record);
-                      }
-                      return _FormIVCaseCard(
-                        record: record,
-                        onEdit: () => _openForm(
-                          record.subCategory ?? record.title,
-                          existingRecord: record,
-                        ),
-                        onView: () {
-                          Navigator.push(
-                            context,
-                            AppTheme.fadeSlideRoute(
-                              page: ModuleRecordDetailScreen(record: record),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1400),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _CategoryFilterBar(
+                options: _filterOptions,
+                selected: _selectedCategory,
+                onSelected: (value) => setState(() => _selectedCategory = value),
+              ),
+              Expanded(
+                child: visibleRecords.isEmpty
+                    ? _EmptyCasesState(
+                        category: _selectedCategory,
+                        readOnly: _readOnly,
+                        onNewCase: _showNewCaseFab ? _onNewCase : null,
+                      )
+                    : LayoutBuilder(
+                        builder: (context, constraints) {
+                          final width = constraints.maxWidth;
+                          final cols = width > 1200 ? 3 : (width > 680 ? 2 : 1);
+                          if (cols == 1) {
+                            return ListView.builder(
+                              padding: const EdgeInsets.fromLTRB(
+                                AppSpacing.lg,
+                                AppSpacing.sm,
+                                AppSpacing.lg,
+                                88,
+                              ),
+                              itemCount: visibleRecords.length,
+                              itemBuilder: (context, index) {
+                                final record = visibleRecords[index];
+                                if (_readOnly) {
+                                  return ReadOnlyModuleRecordHubCard(record: record);
+                                }
+                                return _FormIVCaseCard(
+                                  record: record,
+                                  onEdit: () => _openForm(
+                                    record.subCategory ?? record.title,
+                                    existingRecord: record,
+                                  ),
+                                  onView: () {
+                                    Navigator.push(
+                                      context,
+                                      AppTheme.fadeSlideRoute(
+                                        page: ModuleRecordDetailScreen(record: record),
+                                      ),
+                                    );
+                                  },
+                                  onPdf: () {
+                                    runWithPdfAuthGate(
+                                      context,
+                                      () => ModulePdfHelper.generatePdf(record),
+                                    );
+                                  },
+                                );
+                              },
+                            );
+                          }
+                          return GridView.builder(
+                            padding: const EdgeInsets.fromLTRB(
+                              AppSpacing.lg,
+                              AppSpacing.sm,
+                              AppSpacing.lg,
+                              88,
                             ),
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: cols,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                              mainAxisExtent: 195,
+                            ),
+                            itemCount: visibleRecords.length,
+                            itemBuilder: (context, index) {
+                              final record = visibleRecords[index];
+                              if (_readOnly) {
+                                return ReadOnlyModuleRecordHubCard(record: record);
+                              }
+                              return _FormIVCaseCard(
+                                record: record,
+                                inGrid: true,
+                                onEdit: () => _openForm(
+                                  record.subCategory ?? record.title,
+                                  existingRecord: record,
+                                ),
+                                onView: () {
+                                  Navigator.push(
+                                    context,
+                                    AppTheme.fadeSlideRoute(
+                                      page: ModuleRecordDetailScreen(record: record),
+                                    ),
+                                  );
+                                },
+                                onPdf: () {
+                                  runWithPdfAuthGate(
+                                    context,
+                                    () => ModulePdfHelper.generatePdf(record),
+                                  );
+                                },
+                              );
+                            },
                           );
                         },
-                      );
-                    },
-                  ),
+                      ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -255,11 +319,15 @@ class _FormIVCaseCard extends StatelessWidget {
     required this.record,
     required this.onEdit,
     required this.onView,
+    required this.onPdf,
+    this.inGrid = false,
   });
 
   final ModuleRecord record;
   final VoidCallback onEdit;
   final VoidCallback onView;
+  final VoidCallback onPdf;
+  final bool inGrid;
 
   Color _statusColor(String status) {
     switch (status) {
@@ -285,7 +353,7 @@ class _FormIVCaseCard extends StatelessWidget {
             : record.firestoreCategoryDisplayName;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: inGrid ? EdgeInsets.zero : const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -299,113 +367,125 @@ class _FormIVCaseCard extends StatelessWidget {
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    if (record.caseNumber.trim().isNotEmpty)
+          Expanded(
+            flex: inGrid ? 1 : 0,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: inGrid ? MainAxisAlignment.spaceBetween : MainAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      if (record.caseNumber.trim().isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.infoBlue.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            record.caseNumber,
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.infoBlue,
+                            ),
+                          ),
+                        ),
+                      const Spacer(),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
+                          horizontal: 10,
                           vertical: 3,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.infoBlue.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(4),
+                          color: statusColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: statusColor.withValues(alpha: 0.3),
+                          ),
                         ),
                         child: Text(
-                          record.caseNumber,
+                          record.status,
                           style: GoogleFonts.poppins(
-                            fontSize: 10,
+                            fontSize: 9,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.infoBlue,
+                            color: statusColor,
                           ),
                         ),
                       ),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: statusColor.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: Text(
-                        record.status,
-                        style: GoogleFonts.poppins(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                          color: statusColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  record.title.trim().isNotEmpty
-                      ? record.title.trim()
-                      : 'Untitled Case',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.navyDark,
+                    ],
                   ),
-                ),
-                if (categoryLabel.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    categoryLabel,
-                    style: GoogleFonts.poppins(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.goldPrimary,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Icon(Icons.person_rounded,
-                        size: 13, color: AppColors.lightSubText),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        record.assignedOfficer.trim().isNotEmpty
-                            ? record.assignedOfficer
-                            : 'Unassigned',
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 4),
+                      Text(
+                        record.title.trim().isNotEmpty
+                            ? record.title.trim()
+                            : 'Untitled Case',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.navyDark,
+                        ),
+                      ),
+                      if (categoryLabel.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          categoryLabel,
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.goldPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Icon(Icons.person_rounded,
+                          size: 13, color: AppColors.lightSubText),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          record.assignedOfficer.trim().isNotEmpty
+                              ? record.assignedOfficer
+                              : 'Unassigned',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            color: AppColors.lightSubText,
+                          ),
+                        ),
+                      ),
+                      Icon(Icons.calendar_today_rounded,
+                          size: 13, color: AppColors.lightSubText),
+                      const SizedBox(width: 4),
+                      Text(
+                        DateFormat('dd MMM yyyy').format(record.incidentDate),
                         style: GoogleFonts.poppins(
                           fontSize: 11,
                           color: AppColors.lightSubText,
                         ),
                       ),
-                    ),
-                    Icon(Icons.calendar_today_rounded,
-                        size: 13, color: AppColors.lightSubText),
-                    const SizedBox(width: 4),
-                    Text(
-                      DateFormat('dd MMM yyyy').format(record.incidentDate),
-                      style: GoogleFonts.poppins(
-                        fontSize: 11,
-                        color: AppColors.lightSubText,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
           Container(height: 1, color: AppColors.lightBorder),
@@ -424,7 +504,7 @@ class _FormIVCaseCard extends StatelessWidget {
                       children: [
                         Icon(Icons.edit_note_rounded,
                             size: 16, color: AppColors.infoBlue),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 4),
                         Text(
                           'Edit',
                           style: GoogleFonts.poppins(
@@ -442,6 +522,31 @@ class _FormIVCaseCard extends StatelessWidget {
               Expanded(
                 child: InkWell(
                   onTap: onView,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.visibility_rounded,
+                            size: 16, color: AppColors.goldPrimary),
+                        const SizedBox(width: 4),
+                        Text(
+                          'View',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.goldPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Container(width: 1, height: 28, color: AppColors.lightBorder),
+              Expanded(
+                child: InkWell(
+                  onTap: onPdf,
                   borderRadius: const BorderRadius.only(
                     bottomRight: Radius.circular(AppRadius.lg),
                   ),
@@ -450,15 +555,15 @@ class _FormIVCaseCard extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.visibility_rounded,
-                            size: 16, color: AppColors.goldPrimary),
-                        const SizedBox(width: 6),
+                        Icon(Icons.picture_as_pdf_rounded,
+                            size: 15, color: AppColors.dangerRed),
+                        const SizedBox(width: 4),
                         Text(
-                          'View',
+                          'PDF',
                           style: GoogleFonts.poppins(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.goldPrimary,
+                            color: AppColors.dangerRed,
                           ),
                         ),
                       ],

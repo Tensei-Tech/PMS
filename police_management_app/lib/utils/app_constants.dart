@@ -313,6 +313,56 @@ class PoliceDesignationEntry {
 class PoliceDesignations {
   PoliceDesignations._();
 
+  /// Investigating Officer (IO) designations: from HC up to Additional SP / Additional CP.
+  static const List<String> ioDesignations = [
+    'HC',
+    'ASI',
+    'PSI',
+    'API',
+    'PI',
+    'Sr. PI',
+    'ACP',
+    'Dy. SP',
+    'SDPO',
+    'ASP',
+    'DCP',
+    'Addl. SP',
+    'Addl. CP',
+  ];
+
+  /// Returns IO designations from HC up to Addl. SP / Addl. CP, filtered by unit type if provided.
+  static List<String> ioDesignationsForUnit([String? unitType]) {
+    if (unitType == 'Commissionerate Police') {
+      return const [
+        'HC',
+        'ASI',
+        'PSI',
+        'API',
+        'PI',
+        'Sr. PI',
+        'ACP',
+        'DCP',
+        'Addl. CP',
+      ];
+    } else if (unitType == 'Superintendent of Police' ||
+        unitType == 'Rural' ||
+        unitType == 'Superintendent') {
+      return const [
+        'HC',
+        'ASI',
+        'PSI',
+        'API',
+        'PI',
+        'Sr. PI',
+        'Dy. SP',
+        'SDPO',
+        'ASP',
+        'Addl. SP',
+      ];
+    }
+    return ioDesignations;
+  }
+
   /// Form IO / Reg dropdowns (common form, NC, missing).
   static const List<String> formIoAndReg = [
     'HC',
