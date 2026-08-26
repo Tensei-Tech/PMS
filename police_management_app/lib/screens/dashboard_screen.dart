@@ -1609,6 +1609,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                         width: avatarRadius * 2,
                                         memCacheWidth: 160,
                                         memCacheHeight: 160,
+                                        height: avatarRadius * 2,
                                         errorWidget: (ctx, url, err) => Text(
                                           initial,
                                           style: GoogleFonts.poppins(
