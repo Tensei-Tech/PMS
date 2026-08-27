@@ -698,7 +698,8 @@ class CommonFormState extends State<CommonForm> {
         final auth = context.read<AuthProvider>();
         station = auth.stationName;
       } catch (_) {}
-      await generateAndPreviewCrimeDetailFromMap(context, doc, stationName: station);
+      await generateAndPreviewCrimeDetailFromMap(context, doc,
+          stationName: station);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1017,10 +1018,12 @@ class CommonFormState extends State<CommonForm> {
     final cr = m['caseResponsibility'] as Map?;
     if (cr != null) {
       final iod = cr['ioDesig']?.toString();
-      if (iod != null && PoliceDesignations.formIoAndReg.contains(iod)) _ioDesig = iod;
+      if (iod != null && PoliceDesignations.formIoAndReg.contains(iod))
+        _ioDesig = iod;
       _ioName.text = _s(cr['ioName']);
       final rd = cr['regDesig']?.toString();
-      if (rd != null && PoliceDesignations.formIoAndReg.contains(rd)) _regDesig = rd;
+      if (rd != null && PoliceDesignations.formIoAndReg.contains(rd))
+        _regDesig = rd;
       _regName.text = _s(cr['regName']);
       _cctvVal = cr['cctvValue'] as String?;
       _cctvDt.text = _s(cr['cctvDateTime']);
@@ -1077,7 +1080,8 @@ class CommonFormState extends State<CommonForm> {
 
     final pr = m['preventive'] as Map?;
     if (pr != null) {
-      _preventiveAction = pr['actionType'] as String? ?? pr['action'] as String?;
+      _preventiveAction =
+          pr['actionType'] as String? ?? pr['action'] as String?;
       _preventiveActionDateTime.text =
           _s(pr['actionDateTime'] ?? pr['actionDt']);
       _preventiveBond = pr['hasBond'] as String? ??
@@ -1514,8 +1518,8 @@ class CommonFormState extends State<CommonForm> {
         label,
         hintText: hintText ?? 'dd/mm/yyyy',
         suffixIcon: IconButton(
-          icon: const Icon(Icons.calendar_today_rounded,
-              size: 17, color: _kTeal),
+          icon:
+              const Icon(Icons.calendar_today_rounded, size: 17, color: _kTeal),
           tooltip: 'Pick date',
           onPressed: () => _pickDateOnly(ctrl, onChanged: onChanged),
           padding: EdgeInsets.zero,
@@ -1532,8 +1536,8 @@ class CommonFormState extends State<CommonForm> {
 
   DateTime? _parseDateTimeDdMmYyyyHhMm(String raw) {
     final s = raw.trim();
-    final m = RegExp(r'^(\d{2})/(\d{2})/(\d{4})\s+(\d{1,2}):(\d{2})$')
-        .firstMatch(s);
+    final m =
+        RegExp(r'^(\d{2})/(\d{2})/(\d{4})\s+(\d{1,2}):(\d{2})$').firstMatch(s);
     if (m == null) return null;
     final dd = int.tryParse(m.group(1)!);
     final mo = int.tryParse(m.group(2)!);
@@ -1617,8 +1621,8 @@ class CommonFormState extends State<CommonForm> {
         label,
         hintText: hintText ?? 'dd/mm/yyyy hh:mm',
         suffixIcon: IconButton(
-          icon: const Icon(Icons.calendar_today_rounded,
-              size: 17, color: _kTeal),
+          icon:
+              const Icon(Icons.calendar_today_rounded, size: 17, color: _kTeal),
           tooltip: 'Pick date & time',
           onPressed: () => _pickDateTimeFor(ctrl, onChanged: onChanged),
           padding: EdgeInsets.zero,
@@ -1709,12 +1713,17 @@ class CommonFormState extends State<CommonForm> {
                   child: Row(
                     children: [
                       Expanded(child: Text(saveBarText, style: _tsMuted)),
-                      _barBtn('Clear', Icons.refresh_outlined, clearForm, _kRed),
+                      _barBtn(
+                          'Clear', Icons.refresh_outlined, clearForm, _kRed),
                       const SizedBox(width: 8),
-                      _barBtn('Save Draft', Icons.save_outlined, saveDraft, _kTeal),
+                      _barBtn(
+                          'Save Draft', Icons.save_outlined, saveDraft, _kTeal),
                       const SizedBox(width: 8),
-                      _barBtn('Generate Crime Detail PDF', Icons.description_outlined,
-                          generateCrimeDetailForm, const Color(0xFF1E3A8A)),
+                      _barBtn(
+                          'Generate Crime Detail PDF',
+                          Icons.description_outlined,
+                          generateCrimeDetailForm,
+                          const Color(0xFF1E3A8A)),
                     ],
                   ),
                 ),
@@ -1725,7 +1734,8 @@ class CommonFormState extends State<CommonForm> {
             Expanded(
               child: ListView(
                 controller: _scroll,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 children: [
                   Center(
                     child: ConstrainedBox(
@@ -1746,7 +1756,8 @@ class CommonFormState extends State<CommonForm> {
                             _card(4, 'Deceased KYC', _sDeceasedKyc(),
                                 startOpen: true),
                           if (widget.middleSlot != null) widget.middleSlot!,
-                          _card(_isMurderCase ? 5 : 4, 'Complainant KYC', _s4()),
+                          _card(
+                              _isMurderCase ? 5 : 4, 'Complainant KYC', _s4()),
                           _card(
                             _isMurderCase ? 6 : 5,
                             'Accused Details',
@@ -1764,25 +1775,32 @@ class CommonFormState extends State<CommonForm> {
                                 : null,
                           ),
                           if (_isUnknown)
-                            _card(
-                                _isMurderCase ? 8 : 7,
-                                'Unidentified Criminal Description',
-                                _s7()),
-                          _card(_isMurderCase ? 9 : 8, 'Case Responsibility', _s8()),
-                          _card(_isMurderCase ? 10 : 9, 'Arrest & Release Status', _s9()),
-                          _card(_isMurderCase ? 11 : 10, 'Procedural Details', _s10()),
+                            _card(_isMurderCase ? 8 : 7,
+                                'Unidentified Criminal Description', _s7()),
+                          _card(_isMurderCase ? 9 : 8, 'Case Responsibility',
+                              _s8()),
+                          _card(_isMurderCase ? 10 : 9,
+                              'Arrest & Release Status', _s9()),
+                          _card(_isMurderCase ? 11 : 10, 'Procedural Details',
+                              _s10()),
                           _card(
                             _isMurderCase ? 12 : 11,
                             'Seizure Records',
                             _s11(),
                             action: _addBtn('Add Seized Property', addSeizure),
                           ),
-                          _card(_isMurderCase ? 13 : 12, 'Technical & Custody', _s12()),
-                          _card(_isMurderCase ? 14 : 13, 'Preventive & Bonds', _s13()),
-                          _card(_isMurderCase ? 15 : 14, 'Discharge Status', _s14()),
-                          _card(_isMurderCase ? 16 : 15, 'Charge Sheet', _s15()),
-                          _card(_isMurderCase ? 17 : 16, 'Case Scrutiny Pipeline', _s17()),
-                          _card(_isMurderCase ? 18 : 17, 'Final Verdict', _s16()),
+                          _card(_isMurderCase ? 13 : 12, 'Technical & Custody',
+                              _s12()),
+                          _card(_isMurderCase ? 14 : 13, 'Preventive & Bonds',
+                              _s13()),
+                          _card(_isMurderCase ? 15 : 14, 'Discharge Status',
+                              _s14()),
+                          _card(
+                              _isMurderCase ? 16 : 15, 'Charge Sheet', _s15()),
+                          _card(_isMurderCase ? 17 : 16,
+                              'Case Scrutiny Pipeline', _s17()),
+                          _card(
+                              _isMurderCase ? 18 : 17, 'Final Verdict', _s16()),
                           const SizedBox(height: 120),
                         ],
                       ),
@@ -1863,7 +1881,8 @@ class CommonFormState extends State<CommonForm> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (_chargeData.isEmpty)
-            _emptyBox('No charges added yet. Tap "+ Add Charge" below to begin.')
+            _emptyBox(
+                'No charges added yet. Tap "+ Add Charge" below to begin.')
           else ...[
             ..._chargeData.entries.toList().asMap().entries.map((e) {
               final id = e.value.key;
@@ -1877,8 +1896,9 @@ class CommonFormState extends State<CommonForm> {
               final num = e.key + 1;
               final data = e.value.value;
               final act = data['act']?.toString() ?? '';
-              final effectiveAct =
-                  act.isNotEmpty && ACT_DATA.containsKey(act) ? act : 'bns_2023';
+              final effectiveAct = act.isNotEmpty && ACT_DATA.containsKey(act)
+                  ? act
+                  : 'bns_2023';
               final secs = (data['sections'] as Set<String>?) ?? {};
               final actLabel =
                   ACT_DATA[effectiveAct]?['label'] as String? ?? effectiveAct;
@@ -2021,7 +2041,8 @@ class CommonFormState extends State<CommonForm> {
   Widget _s3() => Column(
         children: [
           _row([
-            _tf('Village/Town', _spotVillage, hintText: 'Enter Village or Town'),
+            _tf('Village/Town', _spotVillage,
+                hintText: 'Enter Village or Town'),
             _tf('Area Name', _spotArea, hintText: 'Enter Area Name'),
           ]),
           _row([
@@ -2159,7 +2180,8 @@ class CommonFormState extends State<CommonForm> {
           _UnknownToggle(value: _isUnknown, onChanged: toggleUnknownUntraced),
           if (!_isUnknown) ...[
             if (_accused.isEmpty)
-              _emptyBox('No accused added yet. Tap "+ Add Accused" in header above.')
+              _emptyBox(
+                  'No accused added yet. Tap "+ Add Accused" in header above.')
             else
               ..._accused.asMap().entries.map((e) => _personCard(
                     title: 'Accused #${e.key + 1}',
@@ -2179,7 +2201,8 @@ class CommonFormState extends State<CommonForm> {
                 style: _tsMuted)
           else ...[
             if (_suspected.isEmpty)
-              _emptyBox('No suspected accused added yet. Tap "+ Add Suspected" in header above.')
+              _emptyBox(
+                  'No suspected accused added yet. Tap "+ Add Suspected" in header above.')
             else
               ..._suspected.asMap().entries.map((e) => _personCard(
                     title: 'Suspected #${e.key + 1}',
@@ -2389,8 +2412,8 @@ class CommonFormState extends State<CommonForm> {
               _row([
                 _dateTimeField('Arrest Date & Time (dd/mm/yyyy hh:mm)',
                     r['arrestDt'] as TextEditingController),
-                _dateField('Release Date',
-                    r['releaseDt'] as TextEditingController),
+                _dateField(
+                    'Release Date', r['releaseDt'] as TextEditingController),
               ]),
               const SizedBox(height: 8),
               _chipSelector(
@@ -2453,8 +2476,8 @@ class CommonFormState extends State<CommonForm> {
                   if (on) ...[
                     const SizedBox(height: 6),
                     _row([
-                      _dateTimeField('Date & Time — ${e.value}',
-                          _procDates[e.key]!),
+                      _dateTimeField(
+                          'Date & Time — ${e.value}', _procDates[e.key]!),
                     ]),
                   ],
                 ],
@@ -2510,7 +2533,8 @@ class CommonFormState extends State<CommonForm> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (_seizures.isEmpty)
-            _emptyBox('No seizure records added yet. Tap "+ Add Seized Property" in header above.')
+            _emptyBox(
+                'No seizure records added yet. Tap "+ Add Seized Property" in header above.')
           else
             ..._seizures.asMap().entries.map((e) {
               final s = e.value;
@@ -2636,7 +2660,8 @@ class CommonFormState extends State<CommonForm> {
   // ── §14 Discharge Status ───────────────────────────────────────────────────
   Widget _s14() {
     if (allAccusedNames.isEmpty) {
-      return _emptyBox('Add accused/suspected names above to manage discharge.');
+      return _emptyBox(
+          'Add accused/suspected names above to manage discharge.');
     }
     return Column(
       children: allAccusedNames.map((n) {

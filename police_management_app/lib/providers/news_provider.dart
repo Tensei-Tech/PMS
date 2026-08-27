@@ -179,53 +179,53 @@ class NewsProvider extends ChangeNotifier {
   ];
 
   List<NewsItem> _items = List.of(defaultNewsItems);
-  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _subscription;
   bool _isLoading = false;
   String? _errorMessage;
 
+  /// Cache TTL — announcements rarely change, 30 minutes is more than enough.
+  static const Duration _cacheTtl = Duration(minutes: 30);
+  DateTime? _lastFetchedAt;
+
   NewsProvider() {
-    _initFirestoreListener();
+    _fetchAnnouncementsOnce();
   }
 
   List<NewsItem> get items => List.unmodifiable(_items);
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  void _initFirestoreListener() {
+  /// Fetches announcements once from Firestore. Skips if cache is still fresh.
+  /// Call [forceRefresh] to bypass the cache (e.g. after admin writes an announcement).
+  Future<void> _fetchAnnouncementsOnce({bool forceRefresh = false}) async {
+    if (!forceRefresh && _lastFetchedAt != null) {
+      final age = DateTime.now().difference(_lastFetchedAt!);
+      if (age < _cacheTtl) return; // Cache still fresh — skip Firestore read.
+    }
     try {
       final collection =
           FirebaseFirestore.instance.collection('app_announcements');
-      _subscription = collection
-          .orderBy('order')
-          .snapshots()
-          .listen(
-            (snapshot) {
-              if (snapshot.docs.isNotEmpty) {
-                _items = snapshot.docs
-                    .map((doc) => NewsItem.fromMap(doc.id, doc.data()))
-                    .toList();
-              } else {
-                // If Firestore is empty, retain local defaults
-                _items = List.of(defaultNewsItems);
-              }
-              _errorMessage = null;
-              notifyListeners();
-            },
-            onError: (err) {
-              if (kDebugMode) {
-                debugPrint('[NewsProvider] Firestore listener fallback: $err');
-              }
-              _items = List.of(defaultNewsItems);
-              _errorMessage = null;
-              notifyListeners();
-            },
-          );
+      final snapshot = await collection.orderBy('order').limit(10).get();
+      _lastFetchedAt = DateTime.now();
+      if (snapshot.docs.isNotEmpty) {
+        _items = snapshot.docs
+            .map((doc) => NewsItem.fromMap(doc.id, doc.data()))
+            .toList();
+      } else {
+        _items = List.of(defaultNewsItems);
+      }
+      _errorMessage = null;
+      notifyListeners();
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('[NewsProvider] Initialization error: $e');
+        debugPrint('[NewsProvider] Firestore fetch error: $e');
       }
+      // Keep local defaults on error — do not clear existing items.
+      _errorMessage = null;
     }
   }
+
+  /// Manually trigger a fresh fetch (e.g. called after admin adds/edits an announcement).
+  Future<void> forceRefresh() => _fetchAnnouncementsOnce(forceRefresh: true);
 
   /// Master Admin creates a new announcement
   Future<void> addAnnouncement(NewsItem item) async {
@@ -324,9 +324,4 @@ class NewsProvider extends ChangeNotifier {
     }
   }
 
-  @override
-  void dispose() {
-    _subscription?.cancel();
-    super.dispose();
-  }
 }

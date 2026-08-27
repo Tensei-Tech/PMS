@@ -81,7 +81,7 @@ class _DashboardAnalyticsSectionState extends State<DashboardAnalyticsSection> {
 
         // Stream of Cases from Firestore for live analytics
         StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance.collection('cases').snapshots(),
+          stream: FirebaseFirestore.instance.collection('cases').limit(500).snapshots(),
           builder: (context, snapshot) {
             final isLoading = snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData;
             final docs = snapshot.data?.docs ?? [];

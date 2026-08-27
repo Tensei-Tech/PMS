@@ -449,6 +449,7 @@ class _OfficersDirectoryViewState extends State<OfficersDirectoryView> {
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('users')
+                  .limit(500)
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {

@@ -103,7 +103,8 @@ class _MainDashboardState extends State<MainDashboard> {
       body: Row(
         children: [
           // 🌟 Custom Responsive Sidebar (#151B4D)
-          AnimatedContainer(
+          RepaintBoundary(
+            child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeInOut,
             width: isExpanded ? 240 : 76,
@@ -347,6 +348,7 @@ class _MainDashboardState extends State<MainDashboard> {
               ],
             ),
           ),
+          ),
 
           // Main View Body
           Expanded(
@@ -413,6 +415,7 @@ class _MainDashboardState extends State<MainDashboard> {
                           StreamBuilder<QuerySnapshot>(
                             stream: FirebaseFirestore.instance
                                 .collection('users')
+                                .limit(200)
                                 .snapshots(),
                             builder: (context, snapshot) {
                               if (snapshot.hasError) {
@@ -533,6 +536,7 @@ class _MainDashboardState extends State<MainDashboard> {
                   ),
                 ),
                 // Main Content Body
+                // Only render active tab content to prevent background listeners from consuming reads
                 Expanded(
                   child: Container(
                     color: theme.scaffoldBackgroundColor,

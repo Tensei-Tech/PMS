@@ -12,6 +12,7 @@ import '../services/storage_service.dart';
 import '../models/user_model.dart';
 import '../models/account_access.dart';
 import '../utils/station_address_parser.dart';
+import '../utils/perf_tracker.dart';
 import 'package:image_picker/image_picker.dart';
 
 void _secureLog(String message) {
@@ -206,6 +207,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   AuthProvider() {
+    PerfTracker.log('2a. AuthProvider created');
     _init();
   }
 
@@ -213,14 +215,18 @@ class AuthProvider extends ChangeNotifier {
     Future.microtask(() {
       _auth.authStateChanges().listen((fb.User? user) async {
         try {
+          PerfTracker.log('4. authStateChanges fired: user=${user?.uid}');
           await _profileSub?.cancel();
           _profileSub = null;
 
           if (user != null) {
+            PerfTracker.startOp('Firestore.watchUser');
             _profileSub = _firestore.watchUser(user.uid).listen(
               (profile) async {
                 try {
                   if (profile == null) return;
+                  PerfTracker.stopOp('Firestore.watchUser');
+                  PerfTracker.log('4a. watchUser snapshot received for ${profile.uid}');
 
                   if (_isSessionActive &&
                       AccountAccess.shouldForceLogout(profile)) {
@@ -331,24 +337,49 @@ class AuthProvider extends ChangeNotifier {
     _isRegistered = true;
     _isSessionActive = true;
     notifyListeners();
+    // Touch lastActiveAt ONCE at login — not on every watchUser snapshot.
+    unawaited(_touchUserLastActiveThrottled(profile.uid));
     await _audit.log(AuditEvent.loginSuccess, uid: profile.uid);
     return null;
+  }
+
+  Future<void> _touchUserLastActive(String userUid) async {
+    if (userUid.isEmpty) return;
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(userUid).update({
+        'lastActiveAt': FieldValue.serverTimestamp(),
+        'lastActive': FieldValue.serverTimestamp(),
+        'lastLoginAt': FieldValue.serverTimestamp(),
+      });
+    } catch (_) {}
+  }
+
+  /// Throttle timestamp — only update lastActiveAt at most once per session start.
+  /// This prevents the watchUser snapshot → write → watchUser snapshot infinite loop.
+  DateTime? _lastTouchedAt;
+  static const Duration _touchCooldown = Duration(minutes: 5);
+
+  /// Throttled version — only touches Firestore once per [_touchCooldown] window.
+  /// This prevents the watchUser → write → watchUser infinite loop.
+  Future<void> _touchUserLastActiveThrottled(String userUid) async {
+    final now = DateTime.now();
+    if (_lastTouchedAt != null && now.difference(_lastTouchedAt!) < _touchCooldown) {
+      return; // Already touched recently — skip to break the loop.
+    }
+    _lastTouchedAt = now;
+    await _touchUserLastActive(userUid);
   }
 
   Future<void> _applyProfileAndBackfill(UserModel profile) async {
     _applyProfile(profile);
     await _backfillDistrictIfNeeded(profile);
-    try {
-      final userUid = profile.uid.isNotEmpty ? profile.uid : uid;
-      if (userUid.isNotEmpty) {
-        await FirebaseFirestore.instance.collection('users').doc(userUid).update({
-          'lastActiveAt': FieldValue.serverTimestamp(),
-          'lastActive': FieldValue.serverTimestamp(),
-          'lastLoginAt': FieldValue.serverTimestamp(),
-        });
-      }
-    } catch (_) {}
+    // NOTE: _touchUserLastActive is NOT called here.
+    // Calling it here caused an infinite read→write→read loop because:
+    // watchUser fires → _touchUserLastActive writes to Firestore →
+    // that write triggers watchUser again → infinite loop at ~50 reads/sec!
+    // It is only called from _completeLoginAfterAuth (actual login event).
   }
+
 
   /// One-time district backfill from stationAddress for legacy profiles.
   Future<void> _backfillDistrictIfNeeded(UserModel profile) async {
@@ -613,16 +644,20 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       final sanitizedEmail = email.trim().toLowerCase();
+      PerfTracker.startOp('signInWithEmailAndPassword');
       final res = await _auth.signInWithEmailAndPassword(
         email: sanitizedEmail,
         password: pin.trim(),
       );
+      PerfTracker.stopOp('signInWithEmailAndPassword');
 
       if (res.user == null) {
         return 'Login failed. Please try again.';
       }
 
+      PerfTracker.startOp('getUserProfile');
       final profile = await _firestore.getUser(res.user!.uid);
+      PerfTracker.stopOp('getUserProfile');
       if (profile == null) {
         await _auth.signOut();
         return 'User profile not found in database.';
@@ -634,19 +669,28 @@ class AuthProvider extends ChangeNotifier {
         return access.blockMessage;
       }
 
-      final salt = PinCrypto.generateSalt();
-      final pinHash = await PinCrypto.hashPinAsync(pin.trim(), salt);
-      await _secure.write(key: StorageKeys.email, value: sanitizedEmail);
-      await _secure.write(key: StorageKeys.pinHash, value: pinHash);
-      await _secure.write(key: StorageKeys.pinSalt, value: salt);
-
-      await _lockout.recordSuccess();
-      await _applyProfileAndBackfill(profile);
+      _applyProfile(profile);
       _isRegistered = true;
       _isSessionActive = true;
+      PerfTracker.log('5. AuthProvider login succeeded, notifying listeners');
       notifyListeners();
 
-      await _audit.log(AuditEvent.loginSuccess, uid: res.user!.uid);
+      // Parallelize secure storage writes, lockout record, backfill, and audit log in background
+      unawaited(Future.wait<dynamic>([
+        PinCrypto.hashPinAsync(pin.trim(), PinCrypto.generateSalt()).then((pinHash) async {
+          final salt = PinCrypto.generateSalt();
+          await Future.wait([
+            _secure.write(key: StorageKeys.email, value: sanitizedEmail),
+            _secure.write(key: StorageKeys.pinHash, value: pinHash),
+            _secure.write(key: StorageKeys.pinSalt, value: salt),
+          ]);
+        }).catchError((_) {}),
+        _lockout.recordSuccess(),
+        _backfillDistrictIfNeeded(profile),
+        _touchUserLastActiveThrottled(profile.uid.isNotEmpty ? profile.uid : uid),
+        _audit.log(AuditEvent.loginSuccess, uid: res.user!.uid),
+      ]));
+
       return null;
     } catch (e) {
       _secureLog('loginWithPin: authentication failed');
@@ -711,21 +755,27 @@ class AuthProvider extends ChangeNotifier {
         return access.blockMessage;
       }
 
-      final salt = PinCrypto.generateSalt();
-      final pinHash = await PinCrypto.hashPinAsync(sanitizedPin, salt);
-      await _secure.write(key: StorageKeys.email, value: sanitizedEmail);
-      await _secure.write(key: StorageKeys.pinHash, value: pinHash);
-      await _secure.write(key: StorageKeys.pinSalt, value: salt);
-
-      await _lockout.recordSuccess();
-
+      _applyProfile(user);
       _isRegistered = true;
       _isSessionActive = true;
-      await _applyProfileAndBackfill(user);
-
       notifyListeners();
 
-      await _audit.log(AuditEvent.loginSuccess, uid: _auth.currentUser!.uid);
+      // Parallelize secure storage writes, lockout record, backfill, and audit log in background
+      unawaited(Future.wait<dynamic>([
+        PinCrypto.hashPinAsync(sanitizedPin, PinCrypto.generateSalt()).then((pinHash) async {
+          final salt = PinCrypto.generateSalt();
+          await Future.wait([
+            _secure.write(key: StorageKeys.email, value: sanitizedEmail),
+            _secure.write(key: StorageKeys.pinHash, value: pinHash),
+            _secure.write(key: StorageKeys.pinSalt, value: salt),
+          ]);
+        }).catchError((_) {}),
+        _lockout.recordSuccess(),
+        _backfillDistrictIfNeeded(user),
+        _touchUserLastActiveThrottled(_auth.currentUser!.uid),
+        _audit.log(AuditEvent.loginSuccess, uid: _auth.currentUser!.uid),
+      ]));
+
       return null;
 
     } on fb.FirebaseAuthException catch (e) {

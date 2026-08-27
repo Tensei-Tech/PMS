@@ -5,6 +5,7 @@ import 'dart:async';
 import '../models/base_record.dart';
 import '../../../services/firestore_service.dart';
 import '../../../utils/case_visibility.dart';
+import '../../../utils/perf_tracker.dart';
 
 class BaseModuleProvider extends ChangeNotifier {
   final String moduleKey;
@@ -15,31 +16,27 @@ class BaseModuleProvider extends ChangeNotifier {
   String _uid = '';
   CaseVisibilityMode _visibilityMode = CaseVisibilityMode.ownCasesOnly;
 
+  /// Debounce timer — collapses rapid-fire notifyListeners() calls from 35
+  /// providers updating simultaneously (e.g. station switch) into a single
+  /// notification, reducing cascading rebuilds from 35→1.
+  Timer? _notifyDebounce;
+
   BaseModuleProvider(this.moduleKey);
 
-  void setStationContext({
-    required String stationId,
-    required String uid,
-    required CaseVisibilityMode visibilityMode,
-  }) {
-    if (_stationId == stationId &&
-        _uid == uid &&
-        _visibilityMode == visibilityMode &&
-        _sub != null) {
-      return;
-    }
-    _stationId = stationId;
-    _uid = uid;
-    _visibilityMode = visibilityMode;
-    _sub?.cancel();
-
-    if (stationId.isEmpty) {
-      _records = [];
+  /// Debounced notify — coalesces calls within 30ms into one rebuild.
+  void _scheduleNotify() {
+    _notifyDebounce?.cancel();
+    _notifyDebounce = Timer(const Duration(milliseconds: 30), () {
       notifyListeners();
-      return;
-    }
+    });
+  }
 
-    _sub = _firestore.getCasesStream(moduleKey, stationId).listen(
+  void ensureSubscribed() {
+    if (_stationId.isEmpty) return;
+    if (_sub != null) return;
+
+    PerfTracker.log('6a. ModuleProvider[$moduleKey].ensureSubscribed opening Firestore stream on-demand');
+    _sub = _firestore.getCasesStream(moduleKey, _stationId).listen(
       (records) {
         _records = CaseVisibility.filterRecords(
           records,
@@ -52,6 +49,29 @@ class BaseModuleProvider extends ChangeNotifier {
         debugPrint('[$moduleKey] Firestore stream error: $e');
       },
     );
+  }
+
+  void setStationContext({
+    required String stationId,
+    required String uid,
+    required CaseVisibilityMode visibilityMode,
+  }) {
+    if (_stationId == stationId &&
+        _uid == uid &&
+        _visibilityMode == visibilityMode) {
+      return;
+    }
+    final bool stationChanged = _stationId != stationId;
+    _stationId = stationId;
+    _uid = uid;
+    _visibilityMode = visibilityMode;
+
+    if (stationChanged || stationId.isEmpty) {
+      _sub?.cancel();
+      _sub = null;
+      _records = [];
+      _scheduleNotify();
+    }
   }
 
   void seedDemoRecords(List<ModuleRecord> demoRecords) {
@@ -72,11 +92,15 @@ class BaseModuleProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _notifyDebounce?.cancel();
     _sub?.cancel();
     super.dispose();
   }
 
-  List<ModuleRecord> get records => _records;
+  List<ModuleRecord> get records {
+    ensureSubscribed();
+    return _records;
+  }
   int get totalCount => _records.length;
   int get openCount => _records.where((r) => r.status == 'Open').length;
   int get activeCount => _records.where((r) => r.status == 'Active').length;

@@ -778,6 +778,7 @@ class _AnnouncementsViewState extends State<AnnouncementsView> {
                 stream: _firestore
                     .collection('app_announcements')
                     .orderBy('order')
+                    .limit(50)
                     .snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {

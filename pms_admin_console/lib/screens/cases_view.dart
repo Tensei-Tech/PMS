@@ -404,7 +404,7 @@ class _CasesViewState extends State<CasesView> {
           // Main Table Area
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('cases').snapshots(),
+              stream: FirebaseFirestore.instance.collection('cases').limit(500).snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
